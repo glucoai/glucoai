@@ -1,11 +1,11 @@
 FROM node:20-alpine AS builder
-WORKDIR /app
+WORKDIR /repo
 RUN corepack enable
 RUN apk add --no-cache git
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
-COPY apps/backend/package.json apps/backend/package.json
+ARG GIT_REPO=https://github.com/glucoai/glucoai.git
+ARG GIT_REF=main
+RUN git clone --depth 1 --branch ${GIT_REF} ${GIT_REPO} /repo
 RUN pnpm install --frozen-lockfile
-COPY apps/backend ./apps/backend
 RUN pnpm --filter @gluco/backend generate
 RUN pnpm --filter @gluco/backend build
 RUN pnpm prune --prod
@@ -13,8 +13,8 @@ RUN pnpm prune --prod
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
-COPY --from=builder /app/apps/backend/package.json ./apps/backend/package.json
+COPY --from=builder /repo/node_modules ./node_modules
+COPY --from=builder /repo/apps/backend/dist ./apps/backend/dist
+COPY --from=builder /repo/apps/backend/package.json ./apps/backend/package.json
 EXPOSE 3000
 CMD ["node", "apps/backend/dist/index.js"]
