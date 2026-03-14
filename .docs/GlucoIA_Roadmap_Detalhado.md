@@ -472,7 +472,7 @@ FRONTEND — SistemaNotificacoes:
 
 FASE 9  ·  DEPLOY + CI/CD + LANÇAMENTO
 OBSERVAÇÃO: PREPARAR TUDO DE FORMA PARA DEPLOY NO EASYPANEL.
-⏱  4 semanas
+⏱  4 semanas +
 🟡 Em andamento
 
 
