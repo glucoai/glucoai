@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("URL_BANCO")
+}
+
+model Clinica {
+  id         String     @id @default(cuid())
+  nome       String
+  slug       String     @unique
+  plano      String
+  logotipo   String?
+  criadoEm   DateTime   @default(now())
+  usuarios   Usuario[]
+  pacientes  Paciente[]
+  assinaturas Assinatura[]
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  clinicaId String
+  nome      String
+  email     String
+  senhaHash String
+  perfil    Perfil
+  criadoEm  DateTime @default(now())
+  ativo     Boolean  @default(true)
+  clinica   Clinica  @relation(fields: [clinicaId], references: [id])
+}
+
+model Paciente {
+  id                String     @id @default(cuid())
+  clinicaId         String
+  nome              String
+  telefone          String
+  dataNascimento    DateTime?
+  genero            String?
+  cidade            String?
+  pais              String?
+  tipoDiabetes      TipoDiabetes
+  anosdiagnostico   Int?
+  medicamentos      String?
+  metaGlicemicaMin  Int?
+  metaGlicemicaMax  Int?
+  ativo             Boolean    @default(true)
+  criadoEm          DateTime   @default(now())
+  clinica           Clinica    @relation(fields: [clinicaId], references: [id])
+  glicemias         Glicemia[]
+  refeicoes         Refeicao[]
+  mensagens         Mensagem[]
+
+  @@unique([clinicaId, telefone])
+}
+
+model Glicemia {
+  id           String          @id @default(cuid())
+  pacienteId   String
+  valor        Float
+  unidade      UnidadeGlicemia
+  contexto     ContextoGlicemia
+  origem       OrigemRegistro
+  notas        String?
+  analiseIA    String?
+  registradoEm DateTime        @default(now())
+  paciente     Paciente        @relation(fields: [pacienteId], references: [id])
+
+  @@index([pacienteId, registradoEm])
+}
+
+model Refeicao {
+  id             String         @id @default(cuid())
+  pacienteId     String
+  urlImagem      String
+  analise        Json?
+  alimentos      String[]
+  calorias       Int?
+  carboidratos   Int?
+  indiceGlicemico Int?
+  cargaGlicemica Int?
+  recomendacaoIA String?
+  origem         OrigemRegistro
+  criadoEm       DateTime       @default(now())
+  paciente       Paciente       @relation(fields: [pacienteId], references: [id])
+}
+
+model Mensagem {
+  id         String           @id @default(cuid())
+  pacienteId String
+  conteudo   String
+  remetente  RemetenteMensagem
+  tipo       TipoMensagem
+  criadoEm   DateTime         @default(now())
+  paciente   Paciente         @relation(fields: [pacienteId], references: [id])
+
+  @@index([pacienteId, criadoEm])
+}
+
+model Assinatura {
+  id                  String          @id @default(cuid())
+  clinicaId           String
+  plano               PlanoAssinatura
+  status              StatusAssinatura
+  fimPeriodoAtual     DateTime?
+  stripeAssinaturaId  String?
+  cancelarNoFim       Boolean         @default(false)
+  clinica             Clinica         @relation(fields: [clinicaId], references: [id])
+  pagamentos          Pagamento[]
+}
+
+model Pagamento {
+  id            String           @id @default(cuid())
+  assinaturaId  String
+  valor         Int
+  status        StatusPagamento
+  gateway       GatewayPagamento
+  gatewayId     String?
+  urlFatura     String?
+  criadoEm      DateTime         @default(now())
+  assinatura    Assinatura       @relation(fields: [assinaturaId], references: [id])
+}
+
+enum Perfil {
+  ADMINISTRADOR
+  PROFISSIONAL
+}
+
+enum TipoDiabetes {
+  TIPO_1
+  TIPO_2
+  GESTACIONAL
+  PRE
+}
+
+enum UnidadeGlicemia {
+  MG_DL
+  MMOL_L
+}
+
+enum ContextoGlicemia {
+  JEJUM
+  APOS_CAFE
+  APOS_ALMOCO
+  APOS_JANTA
+  DORMIR
+  OUTRO
+}
+
+enum OrigemRegistro {
+  WHATSAPP
+  DASHBOARD
+  API
+}
+
+enum RemetenteMensagem {
+  PACIENTE
+  SISTEMA
+  IA
+  PROFISSIONAL
+}
+
+enum TipoMensagem {
+  TEXTO
+  IMAGEM
+  TEMPLATE
+}
+
+enum StatusAssinatura {
+  ATIVA
+  INADIMPLENTE
+  CANCELADA
+}
+
+enum PlanoAssinatura {
+  INICIAL
+  PROFISSIONAL
+  CLINICA
+}
+
+enum StatusPagamento {
+  PAGO
+  PENDENTE
+  FALHOU
+}
+
+enum GatewayPagamento {
+  STRIPE
+  MERCADO_PAGO
+}

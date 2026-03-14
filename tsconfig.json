@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "types": ["node"]
+  },
+  "include": ["apps/**/*", "packages/**/*", "workers/**/*"],
+  "exclude": ["apps/backend/prisma/**"]
+}

@@ -1,0 +1,45 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: install
+        run: pnpm install --frozen-lockfile
+      - name: lint
+        run: pnpm -r lint
+      - name: typecheck
+        run: pnpm -r typecheck
+      - name: test
+        run: pnpm -r test --if-present
+      - name: build
+        run: pnpm -r build
+      - name: deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          script: |
+            if [ ! -d /opt/glucoai ]; then git clone https://github.com/glucoai/glucoai.git /opt/glucoai; fi
+            cd /opt/glucoai
+            git pull
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --build
