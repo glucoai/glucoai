@@ -5,6 +5,14 @@ const tsPlugin = require('@typescript-eslint/eslint-plugin');
 const reactPlugin = require('eslint-plugin-react');
 
 module.exports = [
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      'apps/frontend/src/**/*.js',
+      'apps/frontend/vite.config.js',
+    ],
+  },
   js.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],
