@@ -9,7 +9,7 @@ RUN if [ -n "$GIT_TOKEN" ]; then REPO_NO_PROTO=$(echo "$GIT_REPO" | sed -e 's#ht
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @gluco/backend generate
 RUN pnpm --filter @gluco/backend build
-RUN pnpm prune --prod
+RUN CI=true pnpm prune --prod
 
 FROM node:20-alpine AS runner
 WORKDIR /app
