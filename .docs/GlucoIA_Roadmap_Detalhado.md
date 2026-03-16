@@ -477,7 +477,7 @@ OBSERVAÇÃO: PREPARAR TUDO DE FORMA PARA DEPLOY NO EASYPANEL.
 
 
 📋 Tarefas
-🟢  🐳  Dockerfiles de produção para todos os serviços (clone com token no EasyPanel + deps runtime)
+🟢  🐳  Dockerfiles de produção para todos os serviços (clone com token no EasyPanel + deps runtime + node_modules)
 🟢  🌐  Nginx com SSL automático (Let's Encrypt)
 🟢  🔄  GitHub Actions: lint → type-check → build → deploy. Enviar para o repo: https://github.com/glucoai/glucoai proprietário: glucoai | aqsmdp.projects@gmail.com ✅ enviado
 🟢  🧪  Testes: unitários (Vitest) + e2e (Playwright)

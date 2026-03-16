@@ -19,6 +19,7 @@ const optionalString = z.preprocess(
 );
 
 const schema = z.object({
+  PORT: z.coerce.number().int().positive().optional(),
   URL_BANCO: z.string().min(1),
   URL_REDIS: z.string().min(1),
   JWT_SEGREDO: z.string().min(32),
@@ -29,6 +30,7 @@ const schema = z.object({
 });
 
 const env = schema.parse({
+  PORT: process.env.PORT,
   URL_BANCO: process.env.URL_BANCO,
   URL_REDIS: process.env.URL_REDIS,
   JWT_SEGREDO: process.env.JWT_SEGREDO,

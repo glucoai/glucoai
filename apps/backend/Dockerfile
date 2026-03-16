@@ -16,6 +16,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /repo/node_modules ./node_modules
+COPY --from=builder /repo/apps/backend/node_modules ./apps/backend/node_modules
 COPY --from=builder /repo/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /repo/apps/backend/package.json ./apps/backend/package.json
 EXPOSE 3000
