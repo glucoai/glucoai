@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { entrarSchema, renovarSchema, sairSchema } from './schema';
+import { entrarSchema, renovarSchema, sairSchema } from './schema.js';
 import {
   buscarUsuarioPorEmail,
   validarSenha,
@@ -9,7 +9,7 @@ import {
   buscarUsuarioPorRefreshToken,
   registrarTentativa,
   limparTentativas,
-} from './service';
+} from './service.js';
 
 type IpRequest = FastifyRequest & { ip: string };
 

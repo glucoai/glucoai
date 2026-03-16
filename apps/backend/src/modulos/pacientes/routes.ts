@@ -8,7 +8,7 @@ import {
   mensagemCriarSchema,
   heatmapQuerySchema,
   relatorioQuerySchema,
-} from './schema';
+} from './schema.js';
 import {
   listarPacientesService,
   obterPacienteDetalheService,
@@ -19,8 +19,8 @@ import {
   criarMensagemProfissionalService,
   obterHeatmapService,
   gerarRelatorioService,
-} from './service';
-import { enviarTextoWhatsApp } from '../whatsapp/service';
+} from './service.js';
+import { enviarTextoWhatsApp } from '../whatsapp/service.js';
 
 type JwtPayload = { clinicaId?: string };
 

@@ -1,5 +1,5 @@
 import PDFDocument from 'pdfkit';
-import type { PacientePayload, PacienteQuery } from './types';
+import type { PacientePayload, PacienteQuery } from './types.js';
 import {
   listarPacientes,
   buscarPacienteDetalhe,
@@ -10,7 +10,7 @@ import {
   listarMensagens,
   criarMensagemProfissional,
   listarGlicemiasPeriodo,
-} from './repository';
+} from './repository.js';
 
 async function listarPacientesService(clinicaId: string, filtros: PacienteQuery) {
   return listarPacientes(clinicaId, filtros);

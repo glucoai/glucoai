@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { env } from '../../config/env';
-import { webhookBodySchema, webhookQuerySchema } from './schema';
-import { processarWebhook, verificarAssinatura } from './service';
+import { env } from '../../config/env.js';
+import { webhookBodySchema, webhookQuerySchema } from './schema.js';
+import { processarWebhook, verificarAssinatura } from './service.js';
 
 type RawBodyRequest = FastifyRequest & { rawBody?: string };
 

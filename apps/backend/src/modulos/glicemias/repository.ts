@@ -1,5 +1,5 @@
-import { prisma } from '../../infra/prisma';
-import type { GlicemiaPayload, GlicemiaQuery } from './types';
+import { prisma } from '../../infra/prisma.js';
+import type { GlicemiaPayload, GlicemiaQuery } from './types.js';
 
 async function obterPacienteAtivo(clinicaId: string, pacienteId: string) {
   return prisma.paciente.findFirst({

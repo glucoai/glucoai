@@ -1,7 +1,7 @@
 import argon2 from 'argon2';
 import { randomUUID } from 'crypto';
-import { prisma } from '../../infra/prisma';
-import { redis } from '../../infra/redis';
+import { prisma } from '../../infra/prisma.js';
+import { redis } from '../../infra/redis.js';
 
 type UsuarioAuth = {
   id: string;

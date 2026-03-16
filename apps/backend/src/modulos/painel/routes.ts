@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { buscarAlertasCriticos, buscarEstatisticasPainel, buscarSerieGlicemia } from './service';
+import { buscarAlertasCriticos, buscarEstatisticasPainel, buscarSerieGlicemia } from './service.js';
 
 type JwtPayload = { clinicaId?: string };
 

@@ -1,13 +1,13 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
-import { env } from './config/env';
-import { autenticacaoRoutes } from './modulos/autenticacao/routes';
-import { pacientesRoutes } from './modulos/pacientes/routes';
-import { glicemiasRoutes } from './modulos/glicemias/routes';
-import { painelRoutes } from './modulos/painel/routes';
+import { env } from './config/env.js';
+import { autenticacaoRoutes } from './modulos/autenticacao/routes.js';
+import { pacientesRoutes } from './modulos/pacientes/routes.js';
+import { glicemiasRoutes } from './modulos/glicemias/routes.js';
+import { painelRoutes } from './modulos/painel/routes.js';
 import { whatsappRoutes } from './modulos/whatsapp/routes.js';
-import { authPlugin } from './plugins/auth';
+import { authPlugin } from './plugins/auth.js';
 
 async function buildApp() {
   const app = Fastify({ logger: true });

@@ -1,11 +1,11 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { glicemiaCriarSchema, glicemiaParamsSchema, glicemiaQuerySchema } from './schema';
+import { glicemiaCriarSchema, glicemiaParamsSchema, glicemiaQuerySchema } from './schema.js';
 import {
   validarPaciente,
   listarGlicemiasService,
   criarGlicemiaService,
   obterEstatisticasService,
-} from './service';
+} from './service.js';
 
 type JwtPayload = { clinicaId?: string };
 

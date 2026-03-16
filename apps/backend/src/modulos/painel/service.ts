@@ -1,6 +1,6 @@
-import { redis } from '../../infra/redis';
-import { obterAlertasCriticos, obterEstatisticasPainel, obterSerieGlicemia30Dias } from './repository';
-import type { PainelAlerta, PainelEstatisticas, PainelSerieGlicemia } from './types';
+import { redis } from '../../infra/redis.js';
+import { obterAlertasCriticos, obterEstatisticasPainel, obterSerieGlicemia30Dias } from './repository.js';
+import type { PainelAlerta, PainelEstatisticas, PainelSerieGlicemia } from './types.js';
 
 const tempoCacheSegundos = 60 * 5;
 

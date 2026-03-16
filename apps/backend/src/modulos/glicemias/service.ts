@@ -1,11 +1,11 @@
-import { classificarGlicemia } from '../../utils/classificarGlicemia';
-import type { GlicemiaPayload, GlicemiaQuery } from './types';
+import { classificarGlicemia } from '../../utils/classificarGlicemia.js';
+import type { GlicemiaPayload, GlicemiaQuery } from './types.js';
 import {
   obterPacienteAtivo,
   listarGlicemias,
   criarGlicemia,
   buscarEstatisticas,
-} from './repository';
+} from './repository.js';
 
 async function validarPaciente(clinicaId: string, pacienteId: string) {
   return obterPacienteAtivo(clinicaId, pacienteId);

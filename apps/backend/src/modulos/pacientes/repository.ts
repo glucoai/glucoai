@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
-import { prisma } from '../../infra/prisma';
-import type { PacientePayload, PacienteQuery } from './types';
+import { prisma } from '../../infra/prisma.js';
+import type { PacientePayload, PacienteQuery } from './types.js';
 
 async function listarPacientes(clinicaId: string, filtros: PacienteQuery) {
   const { busca, tipo, pagina, limite } = filtros;

@@ -1,12 +1,12 @@
 import crypto from 'crypto';
-import { env } from '../../config/env';
+import { env } from '../../config/env.js';
 import {
   buscarPacientePorTelefone,
   salvarMensagem,
   criarGlicemia,
   buscarUltimasGlicemias,
-} from './repository';
-import type { MensagemEntrada, RotaMensagem, WebhookPayload } from './types';
+} from './repository.js';
+import type { MensagemEntrada, RotaMensagem, WebhookPayload } from './types.js';
 
 const menuMensagem =
   'Olá! Sou o assistente Gluco IA 🤖\n' +

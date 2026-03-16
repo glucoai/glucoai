@@ -1,4 +1,4 @@
-import { prisma } from '../../infra/prisma';
+import { prisma } from '../../infra/prisma.js';
 
 type MensagemCriar = {
   pacienteId: string;

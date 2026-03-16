@@ -1,5 +1,5 @@
-import { prisma } from '../../infra/prisma';
-import type { PainelAlerta, PainelEstatisticas, PainelSerieGlicemia } from './types';
+import { prisma } from '../../infra/prisma.js';
+import type { PainelAlerta, PainelEstatisticas, PainelSerieGlicemia } from './types.js';
 
 async function obterEstatisticasPainel(clinicaId: string): Promise<PainelEstatisticas> {
   const agora = new Date();
