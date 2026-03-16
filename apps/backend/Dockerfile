@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS base
 WORKDIR /repo
 RUN corepack enable
 RUN apk add --no-cache git
@@ -6,10 +6,11 @@ ARG GIT_REPO=https://github.com/glucoai/glucoai.git
 ARG GIT_REF=main
 ARG GIT_TOKEN=
 RUN if [ -n "$GIT_TOKEN" ]; then REPO_NO_PROTO=$(echo "$GIT_REPO" | sed -e 's#https://##' -e 's#http://##'); git clone --depth 1 --branch ${GIT_REF} https://${GIT_TOKEN}@${REPO_NO_PROTO} /repo; else git clone --depth 1 --branch ${GIT_REF} ${GIT_REPO} /repo; fi
+
+FROM base AS builder
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @gluco/backend generate
 RUN pnpm --filter @gluco/backend build
-RUN CI=true pnpm prune --prod
 
 FROM node:20-alpine AS runner
 WORKDIR /app

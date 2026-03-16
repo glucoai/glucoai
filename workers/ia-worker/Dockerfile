@@ -8,7 +8,7 @@ ARG GIT_TOKEN=
 RUN if [ -n "$GIT_TOKEN" ]; then REPO_NO_PROTO=$(echo "$GIT_REPO" | sed -e 's#https://##' -e 's#http://##'); git clone --depth 1 --branch ${GIT_REF} https://${GIT_TOKEN}@${REPO_NO_PROTO} /repo; else git clone --depth 1 --branch ${GIT_REF} ${GIT_REPO} /repo; fi
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @gluco/ia-worker build
-RUN pnpm prune --prod
+RUN CI=true pnpm --filter @gluco/ia-worker prune --prod
 
 FROM node:20-alpine AS runner
 WORKDIR /app
