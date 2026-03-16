@@ -11,6 +11,7 @@ RUN pnpm --filter @gluco/frontend build
 
 FROM nginx:alpine AS runner
 WORKDIR /usr/share/nginx/html
+COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /repo/apps/frontend/dist .
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
