@@ -5,7 +5,8 @@
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "loadtest:backend": "node scripts/loadtest-backend.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.10.0",
@@ -14,6 +15,7 @@
     "eslint-plugin-react": "^7.36.1",
     "globals": "^15.9.0",
     "@types/node": "^20.14.9",
+    "autocannon": "^7.15.0",
     "typescript": "^5.5.4"
   },
   "engines": {

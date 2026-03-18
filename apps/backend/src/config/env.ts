@@ -20,6 +20,10 @@ const optionalString = z.preprocess(
 
 const schema = z.object({
   PORT: z.coerce.number().int().positive().optional(),
+  SENTRY_DSN: optionalString,
+  SENTRY_ENVIRONMENT: optionalString,
+  SENTRY_RELEASE: optionalString,
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
   URL_BANCO: z.string().min(1),
   URL_REDIS: z.string().min(1),
   JWT_SEGREDO: z.string().min(32),
@@ -31,6 +35,10 @@ const schema = z.object({
 
 const env = schema.parse({
   PORT: process.env.PORT,
+  SENTRY_DSN: process.env.SENTRY_DSN,
+  SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
+  SENTRY_RELEASE: process.env.SENTRY_RELEASE,
+  SENTRY_TRACES_SAMPLE_RATE: process.env.SENTRY_TRACES_SAMPLE_RATE,
   URL_BANCO: process.env.URL_BANCO,
   URL_REDIS: process.env.URL_REDIS,
   JWT_SEGREDO: process.env.JWT_SEGREDO,

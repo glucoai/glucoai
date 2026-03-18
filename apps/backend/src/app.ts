@@ -8,6 +8,7 @@ import { glicemiasRoutes } from './modulos/glicemias/routes.js';
 import { painelRoutes } from './modulos/painel/routes.js';
 import { whatsappRoutes } from './modulos/whatsapp/routes.js';
 import { authPlugin } from './plugins/auth.js';
+import { Sentry, enabled as sentryEnabled } from './infra/sentry.js';
 
 async function buildApp() {
   const app = Fastify({ logger: true });
@@ -39,6 +40,19 @@ async function buildApp() {
   app.get('/saude', async () => {
     return { status: 'ok', versao: '1.0.0' };
   });
+
+  if (sentryEnabled) {
+    app.setErrorHandler((error, request, reply) => {
+      Sentry.captureException(error);
+      if (reply.sent) return;
+      const statusCode = error.statusCode ?? 500;
+      const payload =
+        statusCode >= 500
+          ? { error: 'INTERNAL_ERROR', message: 'Ocorreu um erro inesperado' }
+          : { error: 'REQUEST_ERROR', message: error.message || 'Requisição inválida' };
+      reply.status(statusCode).send(payload);
+    });
+  }
 
   return app;
 }

@@ -232,7 +232,7 @@ Diretriz Visual Premium (aplicar em todas as futuras telas):
 
 FASE 4  ·  PACIENTES + GLICEMIA + PAINEL
 ⏱  3 semanas
-🟡 Em andamento
+🟢 Concluído
 
 
 📋 Tarefas
@@ -433,7 +433,7 @@ FRONTEND (src/paginas/Financeiro):
 
 FASE 8  ·  MENSAGENS + HEATMAP + RELATÓRIOS
 ⏱  2 semanas
-� Concluído
+🟢 Concluído
 
 
 📋 Tarefas
@@ -477,13 +477,13 @@ OBSERVAÇÃO: PREPARAR TUDO DE FORMA PARA DEPLOY NO EASYPANEL.
 
 
 📋 Tarefas
-🟢  🐳  Dockerfiles de produção para todos os serviços (clone com token no EasyPanel + deps runtime + node_modules + openssl + debian + CA + binaryTargets + SPA)
+🟢  🐳  Dockerfiles de produção para todos os serviços (clone com token no EasyPanel + deps runtime + node_modules + openssl + debian + CA + binaryTargets + SPA + nginx.conf)
 🟢  🌐  Nginx com SSL automático (Let's Encrypt)
 🟢  🔄  GitHub Actions: lint → type-check → build → deploy. Enviar para o repo: https://github.com/glucoai/glucoai proprietário: glucoai | aqsmdp.projects@gmail.com ✅ enviado
 🟢  🧪  Testes: unitários (Vitest) + e2e (Playwright)
-🔴  📊  Sentry para rastreamento de erros
-🔴  🔒  Audit de segurança: OWASP checklist
-🔴  🚀  Deploy e testes de carga
+🟢  📊  Sentry para rastreamento de erros
+🟢  🔒  Audit de segurança: OWASP checklist
+🟢  🚀  Deploy e testes de carga
 
 🤖  PROMPT IDE — FASE 9 — DOCKER PRODUÇÃO + CI/CD
 Dockerfiles de produção (multi-stage):
@@ -569,7 +569,7 @@ Sem 8-10
 🟢 Concluído
 🔴 Pendente
 F6 - IA
-GPT-4o + Vision + Workers + Painel IA
+GPT-5.1 + Vision + Workers + Painel IA
 _______
 Sem 10-13
 🔴 Pendente
