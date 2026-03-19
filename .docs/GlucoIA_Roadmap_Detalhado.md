@@ -180,6 +180,7 @@ FASE 3  ·  AUTENTICAÇÃO + TELAS BASE
 🟢  🚪  POST /autenticacao/sair — invalida token
 🟢  🛡️  Middleware autenticarJWT e exigirPerfil
 🟢  ⛔  Rate limit: 10 tentativas/15min por IP
+🟢  🔁  Recuperação de senha (esqueci senha + redefinir senha)
 
 📋 Tarefas — Frontend
 🟢  📱  Tela de Login com identidade visual Gluco IA
@@ -188,6 +189,7 @@ FASE 3  ·  AUTENTICAÇÃO + TELAS BASE
 🟢  🔀  Rotas protegidas por perfil (React Router)
 🟢  🌍  Todos os textos, labels e placeholders em PT-BR
 🟢  🚪  Logout no menu do usuário (desktop)
+🟢  🔑  Tela de Esqueci Senha + Redefinir Senha
 
 🤖  PROMPT IDE — FASE 3 — AUTH + LAYOUT (DESKTOP E MOBILE)
 BACKEND:
@@ -394,7 +396,7 @@ FRONTEND — CardAnaliseIA (mobile, tela refeições):
 
 FASE 7  ·  FINANCEIRO — STRIPE (standby não inciar sem autorização, tomando decisaão sobre outro gateway)
 ⏱  2 semanas
-🔴 Em andamento (standby não inciar sem autorização, tomando decisaão sobre outro gateway)
+🟡 Em andamento (standby não inciar sem autorização, tomando decisaão sobre outro gateway)
 
 
 📋 Tarefas
@@ -402,6 +404,7 @@ FASE 7  ·  FINANCEIRO — STRIPE (standby não inciar sem autorização, tomand
 🔴  🔗  POST /financeiro/checkout → Stripe Session
 🔴  📩  Webhook Stripe com validação de assinatura
 🔴  📊  Controle de acesso por plano de assinatura
+🔴  🧾  Plano gratuito vs pago + bloqueio de features
 🔴  💰  Tela Financeiro com histórico de pagamentos
 🔴  ⚠️  E-mail automático de inadimplência
 
@@ -473,7 +476,7 @@ FRONTEND — SistemaNotificacoes:
 FASE 9  ·  DEPLOY + CI/CD + LANÇAMENTO
 OBSERVAÇÃO: PREPARAR TUDO DE FORMA PARA DEPLOY NO EASYPANEL.
 ⏱  4 semanas +
-🟡 Em andamento
+🟢 Concluído
 
 
 📋 Tarefas
@@ -561,33 +564,32 @@ F4 - Core
 Pacientes + Glicemia + Painel
 _______
 Sem 5-8
-🟡 Em andamento
+🟢 Concluído
 F5 - WA
 WhatsApp + Menu PT-BR + Chat
 _______
 Sem 8-10
 🟢 Concluído
-🔴 Pendente
 F6 - IA
 GPT-5.1 + Vision + Workers + Painel IA
 _______
 Sem 10-13
-🔴 Pendente
+🟢 Concluído
 F7 - Fin
 Stripe + Assinaturas + Tela Financeiro
 _______
 Sem 13-15
-🔴 Pendente
+🟡 Em andamento (standby)
 F8 - Msg
 Chat + Heatmap + Relatórios + Notif.
 _______
 Sem 15-17
-� Concluído
+🟢 Concluído
 F9 - Deploy
 Docker Prod + CI/CD + Lançamento
 _______
 Sem 17-22
-🔴 Pendente
+🟢 Concluído
 
 
 🎯 Definição de Pronto — Critério universal entre fases

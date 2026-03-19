@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { apiUrl } from '../config/api';
 import { useAuthStore } from '../stores/useAuthStore';
 import { BotaoPrimario, Card } from '@gluco/ui';
@@ -101,6 +102,11 @@ export function LoginPage() {
               </button>
             </div>
           </label>
+        </div>
+        <div className="flex justify-end">
+          <Link to="/esqueci-senha" className="text-sm text-primaria">
+            Esqueceu sua senha?
+          </Link>
         </div>
         <BotaoPrimario className="w-full" onClick={entrar} disabled={carregando}>
           {carregando ? 'Entrando...' : 'Entrar'}

@@ -1,5 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
+import { EsqueciSenhaPage } from './pages/EsqueciSenhaPage';
+import { RedefinirSenhaPage } from './pages/RedefinirSenhaPage';
 import { PainelPage } from './pages/PainelPage';
 import { InicioPage } from './pages/InicioPage';
 import { RefeicoesPage } from './pages/RefeicoesPage';
@@ -30,6 +32,8 @@ export default function App() {
         <Route path="/" element={<VendaPage />} />
         <Route path="/venda" element={<VendaPage />} />
         <Route path="/entrar" element={<LoginPage />} />
+        <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
+        <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
         <Route
           path="/painel"
           element={

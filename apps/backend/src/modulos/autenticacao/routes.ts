@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { entrarSchema, renovarSchema, sairSchema } from './schema.js';
+import { entrarSchema, renovarSchema, sairSchema, esqueciSenhaSchema, redefinirSenhaSchema } from './schema.js';
 import {
   buscarUsuarioPorEmail,
   validarSenha,
@@ -9,7 +9,14 @@ import {
   buscarUsuarioPorRefreshToken,
   registrarTentativa,
   limparTentativas,
+  gerarTokenReset,
+  salvarTokenReset,
+  buscarUsuarioPorResetToken,
+  removerTokenReset,
+  atualizarSenha,
 } from './service.js';
+import { env } from '../../config/env.js';
+import nodemailer from 'nodemailer';
 
 type IpRequest = FastifyRequest & { ip: string };
 
@@ -52,6 +59,26 @@ async function criarToken(app: FastifyInstance, usuario: Usuario) {
 
 function obterIp(request: FastifyRequest) {
   return (request as IpRequest).ip || 'desconhecido';
+}
+
+async function enviarEmailRecuperacao(destinatario: string, link: string) {
+  if (!env.SMTP_HOST || !env.SMTP_FROM) return;
+  const transporter = nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT ?? 587,
+    secure: env.SMTP_SECURE ?? false,
+    auth:
+      env.SMTP_USER && env.SMTP_PASS
+        ? { user: env.SMTP_USER, pass: env.SMTP_PASS }
+        : undefined,
+  });
+  await transporter.sendMail({
+    from: env.SMTP_FROM,
+    to: destinatario,
+    subject: 'Recuperação de senha — Gluco IA',
+    text: `Olá! Para redefinir sua senha, acesse: ${link}`,
+    html: `<p>Olá! Para redefinir sua senha, clique no link abaixo:</p><p><a href="${link}">Redefinir senha</a></p>`,
+  });
 }
 
 async function verificarLimite(ip: string, reply: FastifyReply) {
@@ -177,6 +204,76 @@ async function processarSaida(request: FastifyRequest, reply: FastifyReply) {
   return reply.send({ ok: true });
 }
 
+async function processarEsqueciSenha(request: FastifyRequest, reply: FastifyReply) {
+  const resultado = esqueciSenhaSchema.safeParse(request.body);
+  if (!resultado.success) {
+    return respostaValidacao(
+      reply,
+      'E-mail inválido.',
+      resultado.error.issues[0]?.path[0],
+    );
+  }
+
+  try {
+    const usuario = await buscarUsuarioPorEmail(resultado.data.email);
+    let resetLink: string | undefined;
+    if (usuario && usuario.ativo) {
+      const token = gerarTokenReset();
+      await salvarTokenReset(token, usuario.id);
+      if (env.FRONTEND_URL) {
+        resetLink = `${env.FRONTEND_URL}/redefinir-senha?token=${token}`;
+      }
+      if (resetLink) {
+        try {
+          await enviarEmailRecuperacao(usuario.email, resetLink);
+        } catch {
+          return reply.send({
+            ok: true,
+            message: 'Se o e-mail estiver cadastrado, enviaremos um link de recuperação.',
+          });
+        }
+      }
+    }
+    const payload = {
+      ok: true,
+      message: 'Se o e-mail estiver cadastrado, enviaremos um link de recuperação.',
+      resetLink: env.RECUPERACAO_EXIBIR_LINK ? resetLink : undefined,
+    };
+    return reply.send(resetLink ? payload : { ok: payload.ok, message: payload.message });
+  } catch {
+    return reply.code(500).send({
+      error: 'INTERNAL_ERROR',
+      message: 'Ocorreu um erro inesperado',
+    });
+  }
+}
+
+async function processarRedefinirSenha(request: FastifyRequest, reply: FastifyReply) {
+  const resultado = redefinirSenhaSchema.safeParse(request.body);
+  if (!resultado.success) {
+    return respostaValidacao(
+      reply,
+      'Dados inválidos para redefinir senha.',
+      resultado.error.issues[0]?.path[0],
+    );
+  }
+
+  try {
+    const usuario = await buscarUsuarioPorResetToken(resultado.data.token);
+    if (!usuario || !usuario.ativo) {
+      return respostaValidacao(reply, 'Token inválido ou expirado.', 'token');
+    }
+    await atualizarSenha(usuario.id, resultado.data.novaSenha);
+    await removerTokenReset(resultado.data.token);
+    return reply.send({ ok: true, message: 'Senha redefinida com sucesso.' });
+  } catch {
+    return reply.code(500).send({
+      error: 'INTERNAL_ERROR',
+      message: 'Ocorreu um erro inesperado',
+    });
+  }
+}
+
 async function autenticacaoRoutes(app: FastifyInstance) {
   app.post('/autenticacao/entrar', async (request, reply) => {
     return processarLogin(app, request, reply);
@@ -188,6 +285,14 @@ async function autenticacaoRoutes(app: FastifyInstance) {
 
   app.post('/autenticacao/sair', async (request, reply) => {
     return processarSaida(request, reply);
+  });
+
+  app.post('/autenticacao/esqueci-senha', async (request, reply) => {
+    return processarEsqueciSenha(request, reply);
+  });
+
+  app.post('/autenticacao/redefinir-senha', async (request, reply) => {
+    return processarRedefinirSenha(request, reply);
   });
 }
 
