@@ -103,17 +103,17 @@ function montarResumoRegistros(registros: { valor: number; registradoEm: Date }[
 }
 
 function adicionarSecao(doc: DocumentoPdf, titulo: string) {
-  doc.fontSize(12).fillColor('#1A5CB8').text(titulo);
+  doc.fontSize(12).fillColor('#2B7FFF').text(titulo);
   doc.moveDown(0.3);
 }
 
 function adicionarLinha(doc: DocumentoPdf, texto: string) {
-  doc.fontSize(10).fillColor('#4F4F4F').text(texto);
+  doc.fontSize(10).fillColor('#1C2235').text(texto);
 }
 
 function montarCabecalho(doc: DocumentoPdf) {
-  doc.fontSize(18).fillColor('#2F80ED').text('GLUCO IA');
-  doc.fontSize(12).fillColor('#27AE60').text('Relatório do Paciente');
+  doc.fontSize(18).fillColor('#2B7FFF').text('GLUCO IA');
+  doc.fontSize(12).fillColor('#00D9B4').text('Relatório do Paciente');
   doc.moveDown();
 }
 
@@ -162,7 +162,7 @@ function adicionarTabela(doc: DocumentoPdf, registros: { valor: number; registra
 }
 
 function adicionarRodape(doc: DocumentoPdf, clinica: string) {
-  doc.fontSize(9).fillColor('#4F4F4F').text(
+  doc.fontSize(9).fillColor('#1C2235').text(
     `Clínica: ${clinica} • Gerado em ${new Date().toLocaleString('pt-BR')}`,
   );
 }

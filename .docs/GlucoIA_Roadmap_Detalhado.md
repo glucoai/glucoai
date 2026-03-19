@@ -456,7 +456,7 @@ BACKEND:
 
 FRONTEND — Heatmap de Adesão:
   Grid de células 12x12px por dia (estilo GitHub contributions)
-  0 registros: #E0E6ED | 1: #B3D9B3 | 2-3: #27AE60 | 4+: #1A7A42
+  0 registros: #1C2235 | 1: #7C9EFF | 2-3: #00D9B4 | 4+: #00C896
   Tooltip: '[data]: [N] registros, média [valor] mg/dL'
   Legenda: 'Menos' → 'Mais' com gradiente verde
 
@@ -520,6 +520,27 @@ Monitoramento:
   - Sentry em frontend + backend
   - UptimeRobot para health checks externos
   - Alertas se backend retornar 5xx por 2+ min
+
+
+FASE 10  ·  ESQUEMA DE CORES — MIDNIGHT VOID
+⏱  3 dias
+🟢 Concluído
+
+
+📋 Tarefas
+🟢  🎨  Atualizar paleta Midnight Void no frontend (tokens globais + Tailwind)
+🟢  🌑  Definir fundo escuro principal e superfícies Deep Carbon
+🟢  🌓  Toggle de tema no header ao lado do sino de alertas
+🟢  📘  Documentar paleta e proporções no PRD
+🟢  🧭  Planejamento da fase em .docs
+
+🤖  PROMPT IDE — FASE 10 — MIDNIGHT VOID
+FRONTEND:
+  globals.css: atualizar variáveis do Design System com a nova paleta
+  tailwind.config.ts: alinhar cores utilitárias aos tokens Midnight Void
+  Fundo principal escuro #08090F e surfaces #1C2235
+  Paleta: #2B7FFF (primária), #00D9B4 (sucesso), #00C896 (acento)
+  Estados: #F5A623 (warning), #FF4D4D (alert), #7C9EFF (info)
 
 
 ✅ Checklist Final Pré-Lançamento
@@ -589,6 +610,11 @@ F9 - Deploy
 Docker Prod + CI/CD + Lançamento
 _______
 Sem 17-22
+🟢 Concluído
+F10 - Cores
+Midnight Void + Tokens Globais
+_______
+Sem 22-23
 🟢 Concluído
 
 

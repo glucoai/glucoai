@@ -37,7 +37,7 @@ function GaugeSvg({
         cx={tamanho / 2}
         cy={tamanho / 2}
         r={raio}
-        stroke="#E0E6ED"
+        stroke="#1C2235"
         strokeWidth={strokeWidth}
         fill="none"
       />
@@ -83,15 +83,15 @@ function classificarGlicemia(valor: number): StatusGlicemia {
 
 function corPorStatus(status: StatusGlicemia) {
   if (status === 'BAIXA') {
-    return '#F2994A';
+    return '#F5A623';
   }
   if (status === 'NORMAL') {
-    return '#27AE60';
+    return '#00D9B4';
   }
   if (status === 'ELEVADA') {
-    return '#2F80ED';
+    return '#2B7FFF';
   }
-  return '#EB5757';
+  return '#FF4D4D';
 }
 
 export function GaugeGlicemia({

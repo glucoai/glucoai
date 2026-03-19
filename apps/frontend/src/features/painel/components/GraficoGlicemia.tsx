@@ -45,15 +45,15 @@ export function GraficoGlicemia({ serie, carregando }: Props) {
         ) : serie.length ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={serie}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E0E6ED" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#7C9EFF" strokeOpacity={0.2} />
               <XAxis dataKey="data" tickFormatter={formatarData} fontSize={10} />
               <YAxis fontSize={10} />
               <Tooltip
                 formatter={(valor) => [`${valor} mg/dL`, '']}
                 labelFormatter={(label) => `Dia ${formatarData(label)}`}
               />
-              <ReferenceArea y1={70} y2={140} fill="#27AE60" fillOpacity={0.08} />
-              <Line type="monotone" dataKey="media" stroke="#2F80ED" strokeWidth={2} dot={false} />
+              <ReferenceArea y1={70} y2={140} fill="#00D9B4" fillOpacity={0.1} />
+              <Line type="monotone" dataKey="media" stroke="#2B7FFF" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         ) : (

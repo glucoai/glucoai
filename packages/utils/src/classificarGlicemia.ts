@@ -6,16 +6,16 @@ type Resultado = {
 
 export function classificarGlicemia(valor: number): Resultado {
   if (valor < 70) {
-    return { codigo: 'HIPO', cor: '#EB5757', label: 'Hipoglicemia' };
+    return { codigo: 'HIPO', cor: '#FF4D4D', label: 'Hipoglicemia' };
   }
   if (valor <= 140) {
-    return { codigo: 'NORMAL', cor: '#27AE60', label: 'Normal' };
+    return { codigo: 'NORMAL', cor: '#00D9B4', label: 'Normal' };
   }
   if (valor <= 200) {
-    return { codigo: 'ELEVADA', cor: '#F2994A', label: 'Elevada' };
+    return { codigo: 'ELEVADA', cor: '#F5A623', label: 'Elevada' };
   }
   if (valor > 300) {
-    return { codigo: 'CRITICA', cor: '#EB5757', label: 'Crítica' };
+    return { codigo: 'CRITICA', cor: '#FF4D4D', label: 'Crítica' };
   }
-  return { codigo: 'HIPER', cor: '#EB5757', label: 'Hiperglicemia' };
+  return { codigo: 'HIPER', cor: '#FF4D4D', label: 'Hiperglicemia' };
 }

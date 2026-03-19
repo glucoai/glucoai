@@ -5,14 +5,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primaria: '#2F80ED',
-        sucesso: '#27AE60',
-        atencao: '#F2994A',
-        perigo: '#EB5757',
-        texto: '#4F4F4F',
-        fundo: '#FFFFFF',
-        superficie: '#F5F7FA',
-        borda: '#E0E6ED',
+        primaria: 'rgb(var(--cor-primaria-rgb) / <alpha-value>)',
+        sucesso: 'rgb(var(--cor-sucesso-rgb) / <alpha-value>)',
+        otimo: 'rgb(var(--cor-otimo-rgb) / <alpha-value>)',
+        atencao: 'rgb(var(--cor-atencao-rgb) / <alpha-value>)',
+        perigo: 'rgb(var(--cor-perigo-rgb) / <alpha-value>)',
+        info: 'rgb(var(--cor-info-rgb) / <alpha-value>)',
+        texto: 'rgb(var(--cor-texto-rgb) / <alpha-value>)',
+        fundo: 'rgb(var(--cor-fundo-rgb) / <alpha-value>)',
+        fundoClaro: 'rgb(var(--cor-fundo-claro-rgb) / <alpha-value>)',
+        superficie: 'rgb(var(--cor-superficie-rgb) / <alpha-value>)',
+        borda: 'rgb(var(--cor-borda-rgb) / <alpha-value>)',
       },
       fontFamily: {
         principal: ['Inter', 'system-ui', 'sans-serif'],
@@ -26,8 +29,8 @@ const config: Config = {
         xl: '28px',
       },
       boxShadow: {
-        card: '0 2px 16px rgba(47,128,237,0.08)',
-        hover: '0 8px 32px rgba(47,128,237,0.16)',
+        card: '0 2px 16px rgba(43,127,255,0.08)',
+        hover: '0 8px 32px rgba(43,127,255,0.16)',
         modal: '0 24px 64px rgba(0,0,0,0.12)',
       },
     },

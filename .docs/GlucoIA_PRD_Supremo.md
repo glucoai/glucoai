@@ -15,7 +15,7 @@ Versão
 Stack
 React + Vite + Node + Fastify + PostgreSQL + OpenAI
 Design
-Inter/Poppins · Azul #2F80ED · Verde #27AE60
+Inter/Poppins · Midnight Void #08090F · Intelligence Blue #2B7FFF · Optimal Teal #00D9B4
 Idioma
 Português BR — toda a interface, labels e mensagens
 Referências UI
@@ -27,27 +27,33 @@ Status
 01 · IDENTIDADE VISUAL & DESIGN SYSTEM
 Aplicar desde o primeiro commit. Toda decisão de interface segue este guia.
 
-🎨 Paleta de Cores Oficial
+🎨 Paleta de Cores Oficial — Midnight Void
 Token CSS
 HEX + Uso
---cor-primaria
-#2F80ED — Azul Inteligência Médica: botões, nav, links ativos
---cor-primaria-escura
-#1A5CB8 — Hover de botões e elementos primários
---cor-sucesso
-#27AE60 — Verde Glicemia Controlada: status OK, indicadores positivos
---cor-atencao
-#F2994A — Laranja Alerta Metabólico: atenção moderada
---cor-perigo
-#EB5757 — Vermelho Hiperglicemia: alertas críticos, erros
---cor-texto
-#4F4F4F — Cinza Tecnologia: textos, labels, dados
 --cor-fundo
-#FFFFFF — Branco Clínico: fundos principais
+#08090F — Midnight Void: background principal (40%)
+--cor-primaria
+#2B7FFF — Intelligence Blue: CTA, links, ação primária (15%)
+--cor-sucesso
+#00D9B4 — Optimal Teal: estado ótimo, sucesso
 --cor-superficie
-#F5F7FA — Cinza Suave: fundo de páginas e cards
+#1C2235 — Deep Carbon: cards e surfaces
+--cor-fundo-claro
+#EEF2FF — Arctic Mist: background light mode
+--cor-otimo
+#00C896 — Optimal: acento positivo
+--cor-atencao
+#F5A623 — Warning
+--cor-perigo
+#FF4D4D — Alert
+--cor-info
+#7C9EFF — Info
+--cor-texto
+#EEF2FF — Texto principal no modo escuro
+--cor-primaria-escura
+#2B7FFF — Hover de botões e elementos primários
 --cor-borda
-#E0E6ED — Bordas suaves de inputs e cards
+#1C2235 — Bordas e divisores em superfícies escuras
 
 
 🔤 Tipografia
@@ -75,9 +81,9 @@ Valor + Uso
 --raio-xl
 28px — cards hero mobile
 --sombra-card
-0 2px 16px rgba(47,128,237,0.08) — cards padrão
+0 2px 16px rgba(43,127,255,0.08) — cards padrão
 --sombra-hover
-0 8px 32px rgba(47,128,237,0.16) — hover e active
+0 8px 32px rgba(43,127,255,0.16) — hover e active
 --sombra-modal
 0 24px 64px rgba(0,0,0,0.12) — modais e bottom sheets
 
@@ -86,15 +92,18 @@ Valor + Uso
 🤖  PROMPT PARA IDE — SETUP DESIGN SYSTEM — globals.css
 :root {
   /* CORES */
-  --cor-primaria:        #2F80ED;
-  --cor-primaria-escura: #1A5CB8;
-  --cor-sucesso:         #27AE60;
-  --cor-atencao:         #F2994A;
-  --cor-perigo:          #EB5757;
-  --cor-texto:           #4F4F4F;
-  --cor-fundo:           #FFFFFF;
-  --cor-superficie:      #F5F7FA;
-  --cor-borda:           #E0E6ED;
+  --cor-primaria:        #2B7FFF;
+  --cor-primaria-escura: #2B7FFF;
+  --cor-sucesso:         #00D9B4;
+  --cor-otimo:           #00C896;
+  --cor-atencao:         #F5A623;
+  --cor-perigo:          #FF4D4D;
+  --cor-info:            #7C9EFF;
+  --cor-texto:           #EEF2FF;
+  --cor-fundo:           #08090F;
+  --cor-fundo-claro:     #EEF2FF;
+  --cor-superficie:      #1C2235;
+  --cor-borda:           #1C2235;
 
   /* TIPOGRAFIA */
   --fonte-principal: 'Inter', system-ui, sans-serif;
@@ -106,15 +115,15 @@ Valor + Uso
   --raio-lg: 20px;  --raio-xl: 28px;
 
   /* SOMBRAS */
-  --sombra-card:  0 2px 16px rgba(47,128,237,0.08);
-  --sombra-hover: 0 8px 32px rgba(47,128,237,0.16);
+  --sombra-card:  0 2px 16px rgba(43,127,255,0.08);
+  --sombra-hover: 0 8px 32px rgba(43,127,255,0.16);
   --sombra-modal: 0 24px 64px rgba(0,0,0,0.12);
 }
 
 body {
   font-family: var(--fonte-principal);
   color: var(--cor-texto);
-  background: var(--cor-superficie);
+  background: var(--cor-fundo);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -128,21 +137,21 @@ Especificação
 Token de Cor
 Comportamento
 BotaoPrimario
-bg #2F80ED, texto branco, raio 10px, padding 12px 24px
+bg #2B7FFF, texto branco, raio 10px, padding 12px 24px
 --cor-primaria
-Hover: #1A5CB8; Loading: spinner branco centralizado
+Hover: #2B7FFF; Loading: spinner branco centralizado
 BotaoSecundario
-border 1.5px #2F80ED, texto #2F80ED, bg transparente
+border 1.5px #2B7FFF, texto #2B7FFF, bg transparente
 --cor-primaria
-Hover: bg #E8F0FD
+Hover: bg #2B7FFF
 BotaoPerigo
-bg #EB5757, texto branco
+bg #FF4D4D, texto branco
 --cor-perigo
 Confirmar exclusão com modal
 BotaoGhost
-sem border, texto #4F4F4F
+sem border, texto #EEF2FF
 --cor-texto
-Hover: bg #F5F7FA
+Hover: bg #1C2235
 BotaoIcone
 40x40px circular, ícone 20px
 --cor-superficie
@@ -164,7 +173,7 @@ Especificação
 Token de Cor
 Comportamento
 CardKPI
-bg branco, raio 12px, sombra-card, padding 20px
+bg #1C2235, raio 12px, sombra-card, padding 20px
 --cor-superficie
 Hover: sombra-hover; sparkline Recharts embutido no rodapé
 CardPaciente
@@ -176,11 +185,11 @@ thumbnail 72x72px à esquerda + macros em linha
 --cor-superficie
 Tag de índice glicêmico colorida
 CardAlerta
-border-left 4px #EB5757 + ícone pulsante
+border-left 4px #FF4D4D + ícone pulsante
 --cor-perigo
 Botão 'Contatar' em linha
 CardAISaude
-gradiente sutil #E8F0FD→branco + ícone robô
+gradiente sutil #2B7FFF→#1C2235 + ícone robô
 --cor-primaria
 Texto gerado pela IA em itálico
 
@@ -195,7 +204,7 @@ Normal (verde) | Elevada (laranja) | Crítica (vermelho pulsante)
 BadgeAssinatura
 Ativo (verde) | Inadimplente (vermelho) | Trial (azul) | Cancelado (cinza)
 ChipFiltro
-bg #F5F7FA, border #E0E6ED — ativo: bg #2F80ED, texto branco
+bg #1C2235, border #1C2235 — ativo: bg #2B7FFF, texto branco
 TagRefeicao
 Café da Manhã / Almoço / Jantar / Lanche — cor única por categoria
 
@@ -204,7 +213,7 @@ Café da Manhã / Almoço / Jantar / Lanche — cor única por categoria
 Componente
 Especificação PT-BR
 CampoTexto
-Placeholder em cinza #9AA5B4; label acima flutuante; border #E0E6ED
+Placeholder em cinza #7C9EFF; label acima flutuante; border #1C2235
 CampoGlicemia
 Input numérico grande (font 24px); unidade 'mg/dL' à direita em cinza
 SeletorContexto
@@ -230,7 +239,7 @@ O paciente acessa via PWA ou link no WhatsApp. A experiência deve parecer um ap
 📱 Layout Base Mobile
 Estrutura de Navegação Mobile
    •   BarraNavegacaoInferior: 5 ícones — Início / Glicemia / Refeições / Histórico / Perfil
-   •   Altura: 64px; bg branco; ícone ativo em azul #2F80ED com label; inativos em cinza
+   •   Altura: 64px; bg #1C2235; ícone ativo em azul #2B7FFF com label; inativos em #7C9EFF
    •   Tela cheia sem padding lateral excessivo — conteúdo respira até as bordas (16px padding)
    •   SafeArea: respeitar notch e barra de gestos em iOS/Android
    •   Transições entre telas: slide horizontal suave (200ms ease-out)
@@ -345,9 +354,10 @@ Inspiração: Dashboard Lessa (imagem 2) e DocuVeria (imagem 4). Sidebar colaps�
 
 🖥️ Layout Base Desktop
 Estrutura do Dashboard Clínico
-   •   SidebarNavegacao: 240px expandida / 64px colapsada (ícones apenas) — bg azul #2F80ED
-   •   Cabeçalho fixo: 64px, bg branco, sombra suave — 'Bom dia, Dr. [Nome]! ☀️' em Poppins
-   •   AreaConteudo: bg #F5F7FA, padding 24px, scroll interno — nunca a página inteira
+   •   SidebarNavegacao: 240px expandida / 64px colapsada (ícones apenas) — bg #1C2235
+   •   Cabeçalho fixo: 64px, bg #1C2235, sombra suave — 'Bom dia, Dr. [Nome]! ☀️' em Poppins
+   •   Toggle de tema (escuro/claro) ao lado do sino de alertas
+   •   AreaConteudo: bg #08090F, padding 24px, scroll interno — nunca a página inteira
    •   PainelIALateral: 320px fixo à direita (colapsável) — resumo IA + alertas ativos
    •   Responsividade: colapsa sidebar em < 1024px; remove painel IA em < 1280px
 
@@ -395,7 +405,7 @@ Contador por categoria entre parênteses
 TabelaPacientes
 Avatar + nome + telefone + tipo + última glicemia + status
 --cor-superficie
-Linha hover: bg #E8F0FD
+Linha hover: bg #1C2235
 GlicemiaInline
 Gauge compacto 40px na coluna da tabela
 Status
@@ -561,8 +571,8 @@ BACKEND:
   Middleware: autenticarJWT() e exigirPerfil('administrador'|'profissional')
 
 FRONTEND — Tela de Login:
-  Layout: fundo #F5F7FA, card centralizado max-w-md bg branco, raio 20px
-  Logo: 'GLUCO' (azul #2F80ED) + 'IA' (verde #27AE60), Poppins 700
+  Layout: fundo #08090F, card centralizado max-w-md bg #1C2235, raio 20px
+  Logo: 'GLUCO' (azul #2B7FFF) + 'IA' (verde #00D9B4), Poppins 700
   Subtítulo: 'Tecnologia cuidando da sua glicemia.'
   Campos: E-mail / Senha com labels em português
   Botão: 'Entrar' — primário azul com loading spinner
@@ -593,7 +603,7 @@ FRONTEND — Listagem:
   TabelaPacientes com colunas: Avatar | Nome | Telefone | Tipo | Glicemia | Status
   Gauge compacto 40px na coluna Glicemia (verde/laranja/vermelho)
   Sparkline 7 dias embutido na linha da tabela
-  Hover da linha: bg #E8F0FD; cursor pointer → abre perfil
+  Hover da linha: bg #1C2235; cursor pointer → abre perfil
 
 FRONTEND — Perfil do Paciente:
   Cabeçalho herói: avatar 72px + nome Poppins 24px + badges clínicos
@@ -620,11 +630,11 @@ BACKEND:
   POST /pacientes/:id/glicemias
 
   utils/classificarGlicemia.ts:
-    < 70     → 'HIPO'   — cor: #EB5757 — label: 'Hipoglicemia'
-    70–140   → 'NORMAL' — cor: #27AE60 — label: 'Normal'
-    141–200  → 'ELEVADA'— cor: #F2994A — label: 'Elevada'
-    > 200    → 'HIPER'  — cor: #EB5757 — label: 'Hiperglicemia'
-    > 300    → 'CRITICA'— cor: #EB5757 — label: 'Crítica' + alerta
+    < 70     → 'HIPO'   — cor: #FF4D4D — label: 'Hipoglicemia'
+    70–140   → 'NORMAL' — cor: #00D9B4 — label: 'Normal'
+    141–200  → 'ELEVADA'— cor: #F5A623 — label: 'Elevada'
+    > 200    → 'HIPER'  — cor: #FF4D4D — label: 'Hiperglicemia'
+    > 300    → 'CRITICA'— cor: #FF4D4D — label: 'Crítica' + alerta
 
 FRONTEND — GaugeGlicemia (componente central):
   SVG circular 200px — anel colorido por status
@@ -633,8 +643,8 @@ FRONTEND — GaugeGlicemia (componente central):
   Animação de entrada: stroke-dashoffset 0.8s ease
 
 FRONTEND — Gráfico:
-  LineChart Recharts — cor da linha: #2F80ED
-  Área de referência: ReferenceArea y1=70 y2=140 fill='#27AE60' fillOpacity=0.1
+  LineChart Recharts — cor da linha: #2B7FFF
+  Área de referência: ReferenceArea y1=70 y2=140 fill='#00D9B4' fillOpacity=0.1
   Pontos coloridos: dot customizado por status
   Tooltip com: data/hora + valor + classificação + contexto
 

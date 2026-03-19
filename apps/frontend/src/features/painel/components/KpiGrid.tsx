@@ -56,7 +56,7 @@ function KpiCard({
             <Line
               type="monotone"
               dataKey="valor"
-              stroke="#2F80ED"
+              stroke="#2B7FFF"
               strokeWidth={2}
               dot={false}
             />

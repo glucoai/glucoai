@@ -12,6 +12,7 @@ import {
   X,
   Search,
   Sun,
+  Moon,
 } from 'lucide-react';
 import { apiUrl } from '../config/api';
 
@@ -79,6 +80,15 @@ export function LayoutDesktop({ children }: Props) {
   const [carregandoAlertas, setCarregandoAlertas] = useState(false);
   const [menuNotificacoesAberto, setMenuNotificacoesAberto] = useState(false);
   const [menuUsuarioAberto, setMenuUsuarioAberto] = useState(false);
+  const [tema, setTema] = useState<'dark' | 'light'>(() => {
+    if (typeof window === 'undefined') return 'dark';
+    const temaSalvo = localStorage.getItem('gluco-tema');
+    if (temaSalvo === 'dark' || temaSalvo === 'light') return temaSalvo;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      return 'light';
+    }
+    return 'dark';
+  });
   const [saindo, setSaindo] = useState(false);
   const [erroSaida, setErroSaida] = useState('');
   const dropdownNotificacoesRef = useRef<HTMLDivElement | null>(null);
@@ -92,6 +102,11 @@ export function LayoutDesktop({ children }: Props) {
     const horas = Math.floor(minutos / 60);
     return `há ${horas}h`;
   }
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', tema);
+    localStorage.setItem('gluco-tema', tema);
+  }, [tema]);
 
   useEffect(() => {
     let ativo = true;
@@ -241,6 +256,19 @@ export function LayoutDesktop({ children }: Props) {
             />
           </div>
           <div className="flex items-center gap-4">
+            <button
+              type="button"
+              className="w-9 h-9 rounded-full border border-borda bg-superficie text-texto flex items-center justify-center"
+              onClick={() => {
+                const novoTema = tema === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', novoTema);
+                localStorage.setItem('gluco-tema', novoTema);
+                setTema(novoTema);
+              }}
+              aria-label="Alternar tema"
+            >
+              {tema === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             <button
               className="relative text-texto"
               onClick={() => {

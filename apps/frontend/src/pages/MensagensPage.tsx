@@ -30,9 +30,9 @@ function formatarHorario(iso: string) {
 
 function corHeatmap(total: number) {
   if (total === 0) return 'bg-borda';
-  if (total === 1) return 'bg-[#B3D9B3]';
-  if (total <= 3) return 'bg-sucesso';
-  return 'bg-[#1A7A42]';
+  if (total === 1) return 'bg-info/30';
+  if (total <= 3) return 'bg-sucesso/60';
+  return 'bg-otimo';
 }
 
 export function MensagensPage() {
@@ -250,9 +250,9 @@ export function MensagensPage() {
                 const alinhamento = isPaciente ? 'items-end' : 'items-start';
                 const cor =
                   mensagem.remetente === 'PACIENTE'
-                    ? 'bg-[#E8F0FD] text-texto'
+                    ? 'bg-primaria/10 text-texto'
                     : mensagem.remetente === 'PROFISSIONAL'
-                      ? 'bg-[#E8F8EF] text-texto'
+                      ? 'bg-sucesso/10 text-texto'
                       : 'bg-fundo text-texto';
                 const badge =
                   mensagem.remetente === 'PROFISSIONAL'
@@ -335,9 +335,9 @@ export function MensagensPage() {
               <span>Menos</span>
               <div className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded bg-borda border border-borda" />
-                <span className="w-3 h-3 rounded bg-[#B3D9B3] border border-borda" />
-                <span className="w-3 h-3 rounded bg-sucesso border border-borda" />
-                <span className="w-3 h-3 rounded bg-[#1A7A42] border border-borda" />
+                <span className="w-3 h-3 rounded bg-info/30 border border-borda" />
+                <span className="w-3 h-3 rounded bg-sucesso/60 border border-borda" />
+                <span className="w-3 h-3 rounded bg-otimo border border-borda" />
               </div>
               <span>Mais</span>
             </div>
