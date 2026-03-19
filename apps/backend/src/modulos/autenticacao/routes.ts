@@ -67,6 +67,7 @@ async function enviarEmailRecuperacao(destinatario: string, link: string) {
     host: env.SMTP_HOST,
     port: env.SMTP_PORT ?? 587,
     secure: env.SMTP_SECURE ?? false,
+    tls: env.SMTP_IGNORE_TLS ? { rejectUnauthorized: false } : undefined,
     auth:
       env.SMTP_USER && env.SMTP_PASS
         ? { user: env.SMTP_USER, pass: env.SMTP_PASS }
@@ -76,8 +77,42 @@ async function enviarEmailRecuperacao(destinatario: string, link: string) {
     from: env.SMTP_FROM,
     to: destinatario,
     subject: 'Recuperação de senha — Gluco IA',
-    text: `Olá! Para redefinir sua senha, acesse: ${link}`,
-    html: `<p>Olá! Para redefinir sua senha, clique no link abaixo:</p><p><a href="${link}">Redefinir senha</a></p>`,
+    text: [
+      'Gluco IA',
+      'Olá! Recebemos uma solicitação para redefinir sua senha.',
+      `Link de recuperação: ${link}`,
+      'Se você não solicitou, ignore este e-mail.',
+    ].join('\n'),
+    html: `
+      <div style="background:#F5F7FA;padding:32px 16px;font-family:Inter,Arial,sans-serif;color:#4F4F4F;">
+        <div style="max-width:560px;margin:0 auto;background:#FFFFFF;border:1px solid #E0E6ED;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(47,128,237,0.08);">
+          <div style="padding:24px 28px;background:linear-gradient(135deg,#2F80ED 0%,#1A5CB8 100%);color:#FFFFFF;">
+            <div style="font-size:18px;font-weight:700;letter-spacing:0.4px;">GLUCO IA</div>
+            <div style="font-size:14px;opacity:0.9;margin-top:6px;">Tecnologia cuidando da sua glicemia</div>
+          </div>
+          <div style="padding:28px;">
+            <div style="font-size:18px;font-weight:600;margin-bottom:8px;color:#1A5CB8;">Redefinição de senha</div>
+            <div style="font-size:14px;line-height:1.6;margin-bottom:18px;">
+              Recebemos uma solicitação para redefinir sua senha. Para continuar, clique no botão abaixo:
+            </div>
+            <div style="text-align:center;margin:20px 0;">
+              <a href="${link}" style="display:inline-block;background:#2F80ED;color:#FFFFFF;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;">
+                Redefinir senha
+              </a>
+            </div>
+            <div style="font-size:13px;line-height:1.6;color:#4F4F4F;background:#F5F7FA;padding:12px 16px;border-radius:10px;border:1px solid #E0E6ED;">
+              Se você não solicitou esta alteração, pode ignorar este e-mail com segurança.
+            </div>
+            <div style="font-size:12px;color:#8A94A6;margin-top:16px;">
+              Este link é válido por 1 hora.
+            </div>
+          </div>
+          <div style="padding:18px 28px;border-top:1px solid #E0E6ED;font-size:12px;color:#8A94A6;background:#FFFFFF;">
+            Gluco IA • Plataforma clínica com IA para acompanhamento de diabetes
+          </div>
+        </div>
+      </div>
+    `,
   });
 }
 
@@ -274,6 +309,42 @@ async function processarRedefinirSenha(request: FastifyRequest, reply: FastifyRe
   }
 }
 
+async function processarTesteEmail(request: FastifyRequest, reply: FastifyReply) {
+  if (!env.SMTP_TESTE_HABILITADO) {
+    return reply.code(403).send({
+      error: 'FORBIDDEN',
+      message: 'Teste de SMTP desabilitado.',
+    });
+  }
+  const resultado = esqueciSenhaSchema.safeParse(request.body);
+  if (!resultado.success) {
+    return respostaValidacao(reply, 'E-mail inválido.', resultado.error.issues[0]?.path[0]);
+  }
+  if (!env.FRONTEND_URL) {
+    return reply.code(400).send({
+      error: 'VALIDATION_ERROR',
+      message: 'FRONTEND_URL não configurado.',
+      field: 'FRONTEND_URL',
+    });
+  }
+  try {
+    const tokenFake = 'teste-token-recuperacao';
+    const link = `${env.FRONTEND_URL}/redefinir-senha?token=${tokenFake}`;
+    await enviarEmailRecuperacao(resultado.data.email, link);
+    return reply.send({
+      ok: true,
+      message: 'E-mail de teste enviado com sucesso.',
+    });
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : 'Erro desconhecido';
+    return reply.code(500).send({
+      error: 'INTERNAL_ERROR',
+      message: 'Falha ao enviar e-mail de teste.',
+      detail: detalhe,
+    });
+  }
+}
+
 async function autenticacaoRoutes(app: FastifyInstance) {
   app.post('/autenticacao/entrar', async (request, reply) => {
     return processarLogin(app, request, reply);
@@ -293,6 +364,10 @@ async function autenticacaoRoutes(app: FastifyInstance) {
 
   app.post('/autenticacao/redefinir-senha', async (request, reply) => {
     return processarRedefinirSenha(request, reply);
+  });
+
+  app.post('/autenticacao/teste-email', async (request, reply) => {
+    return processarTesteEmail(request, reply);
   });
 }
 

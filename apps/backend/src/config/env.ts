@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 const caminhos = [
   path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), 'apps/backend/.env'),
   path.resolve(process.cwd(), '../../.env'),
 ];
 
@@ -32,6 +33,8 @@ const schema = z.object({
   SMTP_PASS: optionalString,
   SMTP_FROM: optionalString,
   SMTP_SECURE: z.coerce.boolean().optional(),
+  SMTP_TESTE_HABILITADO: z.coerce.boolean().optional(),
+  SMTP_IGNORE_TLS: z.coerce.boolean().optional(),
   URL_BANCO: z.string().min(1),
   URL_REDIS: z.string().min(1),
   JWT_SEGREDO: z.string().min(32),
@@ -55,6 +58,8 @@ const env = schema.parse({
   SMTP_PASS: process.env.SMTP_PASS,
   SMTP_FROM: process.env.SMTP_FROM,
   SMTP_SECURE: process.env.SMTP_SECURE,
+  SMTP_TESTE_HABILITADO: process.env.SMTP_TESTE_HABILITADO,
+  SMTP_IGNORE_TLS: process.env.SMTP_IGNORE_TLS,
   URL_BANCO: process.env.URL_BANCO,
   URL_REDIS: process.env.URL_REDIS,
   JWT_SEGREDO: process.env.JWT_SEGREDO,
