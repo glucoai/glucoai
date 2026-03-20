@@ -45,16 +45,18 @@ export function RedefinirSenhaPage() {
     <div className="min-h-screen bg-superficie flex items-center justify-center p-6">
       <Card className="w-full max-w-md space-y-6">
         <div className="text-center space-y-3">
-          <img
-            src="/logo-gluco-ai-para-fundo-escuro.png"
-            alt="Gluco IA"
-            className="h-10 w-auto mx-auto logo-tema-escuro"
-          />
-          <img
-            src="/logo-gluco-ai-para-fundo-claro.png"
-            alt="Gluco IA"
-            className="h-10 w-auto mx-auto logo-tema-claro"
-          />
+          <div className="flex justify-center">
+            <img
+              src="/logo-gluco-ai-para-fundo-escuro.png"
+              alt="Gluco IA"
+              className="h-10 w-auto logo-tema-escuro"
+            />
+            <img
+              src="/logo-gluco-ai-para-fundo-claro.png"
+              alt="Gluco IA"
+              className="h-10 w-auto logo-tema-claro"
+            />
+          </div>
           <p className="text-texto">Defina uma nova senha.</p>
         </div>
         {erro ? (

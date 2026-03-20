@@ -195,16 +195,16 @@ export function LayoutDesktop({ children }: Props) {
   return (
     <div className="min-h-screen bg-superficie flex">
       <aside className="hidden lg:flex flex-col w-64 bg-fundo border-r border-borda">
-        <div className="h-16 flex items-center px-6">
+        <div className="h-20 flex items-center px-6">
           <img
             src="/logo-gluco-ai-para-fundo-escuro.png"
             alt="Gluco IA"
-            className="h-7 w-auto logo-tema-escuro"
+            className="h-10 w-auto logo-tema-escuro"
           />
           <img
             src="/logo-gluco-ai-para-fundo-claro.png"
             alt="Gluco IA"
-            className="h-7 w-auto logo-tema-claro"
+            className="h-10 w-auto logo-tema-claro"
           />
         </div>
         <div className="border-b border-borda" />
@@ -248,7 +248,7 @@ export function LayoutDesktop({ children }: Props) {
             {alertas.length > 1 ? 's' : ''} aguardando resposta.
           </div>
         ) : null}
-        <header className="h-16 bg-fundo border-b border-borda flex items-center justify-between px-6">
+        <header className="h-20 bg-fundo border-b border-borda flex items-center justify-between px-6">
           <div className="font-display text-lg text-texto flex items-center gap-2">
             <Sun className="text-atencao" size={18} />
             <span>Bom dia, {usuario?.nome ?? 'Doutor'}!</span>
@@ -287,7 +287,7 @@ export function LayoutDesktop({ children }: Props) {
               ) : null}
             </button>
             <button
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-borda bg-superficie text-texto"
+              className="flex items-center px-2 py-1.5 rounded-full border border-borda bg-superficie text-texto"
               onClick={() => {
                 setMenuUsuarioAberto((estado) => !estado);
                 setMenuNotificacoesAberto(false);
@@ -296,9 +296,6 @@ export function LayoutDesktop({ children }: Props) {
               <div className="w-8 h-8 rounded-full bg-primaria/10 flex items-center justify-center text-primaria text-sm font-semibold">
                 {usuario?.nome?.charAt(0) ?? 'G'}
               </div>
-              <span className="hidden lg:block text-sm font-medium">
-                {usuario?.nome ?? 'Administrador'}
-              </span>
             </button>
             {menuNotificacoesAberto ? (
               <div
