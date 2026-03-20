@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
 import { EsqueciSenhaPage } from './pages/EsqueciSenhaPage';
 import { RedefinirSenhaPage } from './pages/RedefinirSenhaPage';
@@ -26,20 +27,79 @@ function RotaProtegida({ children, perfis }: { children: JSX.Element; perfis: st
   return children;
 }
 
-export default function App() {
-  useEffect(() => {
-    const temaSalvo = localStorage.getItem('gluco-tema');
-    if (temaSalvo === 'dark' || temaSalvo === 'light') {
-      document.documentElement.setAttribute('data-theme', temaSalvo);
-      return;
-    }
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-      document.documentElement.setAttribute('data-theme', 'light');
-    }
-  }, []);
+function RotasComSeo() {
+  const { pathname } = useLocation();
+  const baseUrl = 'https://glucoia.com';
+  const ogImage = `${baseUrl}/gluco-ai-imagem.png`;
+  const ogImageAlt = 'Gluco IA — Plataforma clínica com IA';
+  const seoPublico: Record<string, { titulo: string; descricao: string; canonical: string }> = {
+    '/': {
+      titulo: 'Gluco IA — Acompanhamento inteligente para clínicas',
+      descricao:
+        'Plataforma clínica com IA para acompanhar pacientes com diabetes via WhatsApp, painel e análises inteligentes.',
+      canonical: `${baseUrl}/`,
+    },
+    '/venda': {
+      titulo: 'Planos Gluco IA — Plataforma clínica com IA',
+      descricao:
+        'Conheça os planos do Gluco IA e leve acompanhamento inteligente para sua clínica de diabetes.',
+      canonical: `${baseUrl}/venda`,
+    },
+    '/entrar': {
+      titulo: 'Entrar — Gluco IA',
+      descricao: 'Acesse sua conta clínica para acompanhar pacientes com diabetes.',
+      canonical: `${baseUrl}/entrar`,
+    },
+  };
+  const seo = seoPublico[pathname];
+  const mostrarJsonLd = pathname === '/' || pathname === '/venda';
+  const jsonLdOrganizacao = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Gluco IA',
+    url: baseUrl,
+    logo: `${baseUrl}/logo-gluco-ai-para-fundo-claro.png`,
+    image: ogImage,
+  };
+  const jsonLdWebsite = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Gluco IA',
+    url: baseUrl,
+  };
 
   return (
-    <BrowserRouter>
+    <>
+      <Helmet>
+        <title>{seo?.titulo ?? 'Gluco IA'}</title>
+        {seo ? <meta name="description" content={seo.descricao} /> : null}
+        {seo ? <link rel="canonical" href={seo.canonical} /> : null}
+        <meta name="robots" content={seo ? 'index, follow' : 'noindex, nofollow'} />
+        {seo ? (
+          <>
+            <meta property="og:title" content={seo.titulo} />
+            <meta property="og:description" content={seo.descricao} />
+            <meta property="og:type" content="website" />
+            <meta property="og:url" content={seo.canonical} />
+            <meta property="og:site_name" content="Gluco IA" />
+            <meta property="og:image" content={ogImage} />
+            <meta property="og:image:alt" content={ogImageAlt} />
+            <meta property="og:locale" content="pt_BR" />
+            <meta name="theme-color" content="#08090F" />
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:title" content={seo.titulo} />
+            <meta name="twitter:description" content={seo.descricao} />
+            <meta name="twitter:image" content={ogImage} />
+            <meta name="twitter:image:alt" content={ogImageAlt} />
+          </>
+        ) : null}
+        {mostrarJsonLd ? (
+          <>
+            <script type="application/ld+json">{JSON.stringify(jsonLdOrganizacao)}</script>
+            <script type="application/ld+json">{JSON.stringify(jsonLdWebsite)}</script>
+          </>
+        ) : null}
+      </Helmet>
       <Routes>
         <Route path="/" element={<VendaPage />} />
         <Route path="/venda" element={<VendaPage />} />
@@ -118,6 +178,25 @@ export default function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </>
+  );
+}
+
+export default function App() {
+  useEffect(() => {
+    const temaSalvo = localStorage.getItem('gluco-tema');
+    if (temaSalvo === 'dark' || temaSalvo === 'light') {
+      document.documentElement.setAttribute('data-theme', temaSalvo);
+      return;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }, []);
+
+  return (
+    <BrowserRouter>
+      <RotasComSeo />
     </BrowserRouter>
   );
 }

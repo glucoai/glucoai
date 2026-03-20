@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /painel
+Disallow: /pacientes
+Disallow: /mensagens
+Disallow: /financeiro
+Disallow: /configuracoes
+Disallow: /inicio
+Disallow: /refeicoes
+
+Sitemap: https://glucoia.com/sitemap.xml

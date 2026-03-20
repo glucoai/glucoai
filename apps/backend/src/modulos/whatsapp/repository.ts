@@ -1,4 +1,16 @@
+import type { ConfiguracaoWhatsapp } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../infra/prisma.js';
+
+const prismaExtendido = prisma as typeof prisma & {
+  configuracaoWhatsapp: {
+    create: (args: { data: ConfiguracaoCriar }) => Promise<unknown>;
+    findFirst: (args: {
+      where: { clinicaId?: string; idNumero?: string };
+      orderBy: { criadoEm: 'desc' };
+    }) => Promise<unknown>;
+  };
+};
 
 type MensagemCriar = {
   pacienteId: string;
@@ -7,17 +19,19 @@ type MensagemCriar = {
   tipo: 'TEXTO' | 'IMAGEM' | 'TEMPLATE';
 };
 
+type ConfiguracaoCriar = {
+  clinicaId: string;
+  idNumero: string;
+  numeroExibicao: string;
+  businessId: string;
+  tokenVerificacao: string;
+  webhookUrl: string;
+  ativo: boolean;
+};
+
 async function buscarPacientePorTelefone(telefone: string) {
   return prisma.paciente.findFirst({
     where: { ativo: true, telefone: { contains: telefone } },
-    select: {
-      id: true,
-      nome: true,
-      telefone: true,
-      tipoDiabetes: true,
-      metaGlicemicaMin: true,
-      metaGlicemicaMax: true,
-    },
   });
 }
 
@@ -45,4 +59,56 @@ async function buscarUltimasGlicemias(pacienteId: string, limite: number) {
   });
 }
 
-export { buscarPacientePorTelefone, salvarMensagem, criarGlicemia, buscarUltimasGlicemias };
+async function criarConfiguracaoWhatsapp(payload: ConfiguracaoCriar) {
+  return prismaExtendido.configuracaoWhatsapp.create({ data: payload }) as Promise<ConfiguracaoWhatsapp>;
+}
+
+async function buscarConfiguracaoWhatsappPorClinica(clinicaId: string) {
+  return prismaExtendido.configuracaoWhatsapp.findFirst({
+    where: { clinicaId },
+    orderBy: { criadoEm: 'desc' },
+  }) as Promise<ConfiguracaoWhatsapp | null>;
+}
+
+async function buscarConfiguracaoWhatsappPorIdNumero(idNumero: string) {
+  return prismaExtendido.configuracaoWhatsapp.findFirst({
+    where: { idNumero },
+    orderBy: { criadoEm: 'desc' },
+  }) as Promise<ConfiguracaoWhatsapp | null>;
+}
+
+async function atualizarPacienteOnboarding(
+  pacienteId: string,
+  dados: {
+    nome?: string;
+    email?: string | null;
+    genero?: string | null;
+    idade?: number | null;
+    alturaCm?: number | null;
+    pesoKg?: number | null;
+    ultimaGlicemia?: number | null;
+    sintomasComplicacoes?: boolean | null;
+    termosAceitos?: boolean;
+    onboardingStatus?: string | null;
+    onboardingEtapa?: string | null;
+    onboardingDados?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+    riscoEscala?: string | null;
+    macrosDiarios?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+  },
+) {
+  return prisma.paciente.update({
+    where: { id: pacienteId },
+    data: dados,
+  });
+}
+
+export {
+  buscarPacientePorTelefone,
+  salvarMensagem,
+  criarGlicemia,
+  buscarUltimasGlicemias,
+  criarConfiguracaoWhatsapp,
+  buscarConfiguracaoWhatsappPorClinica,
+  buscarConfiguracaoWhatsappPorIdNumero,
+  atualizarPacienteOnboarding,
+};

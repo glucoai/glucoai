@@ -5,6 +5,10 @@ type WebhookMensagem = {
   type?: string;
   text?: { body?: string };
   image?: { id?: string };
+  interactive?: {
+    button_reply?: { id?: string; title?: string };
+    list_reply?: { id?: string; title?: string };
+  };
 };
 
 type WebhookChange = {
@@ -24,7 +28,7 @@ type WebhookPayload = {
 type MensagemEntrada = {
   id: string;
   telefone: string;
-  tipo: 'text' | 'image' | 'unknown';
+  tipo: 'text' | 'image' | 'interactive' | 'unknown';
   texto?: string;
   imagemId?: string;
 };

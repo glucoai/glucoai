@@ -689,6 +689,22 @@ workers/ia-worker/src:
        🧠 Sua glicemia pode subir ~[X]-[Y] mg/dL.
        💡 [orientação personalizada e encorajadora]'
 
+
+12 · SEO AVANÇADO — PÚBLICO
+Aplicar apenas nas rotas públicas: /, /venda, /entrar.
+
+Meta tags por rota
+- Title, description e canonical em PT-BR
+- Open Graph e Twitter Card com imagem oficial
+- Robots index, follow nas rotas públicas
+
+Arquivos estáticos
+- robots.txt com sitemap e regras de produção
+- sitemap.xml com URLs públicas
+
+Schema.org
+- Organization e WebSite via JSON-LD
+
 Configuração: concorrência 5 (glicemia) e 3 (refeição)
 Retry: 3 tentativas com backoff exponencial
 

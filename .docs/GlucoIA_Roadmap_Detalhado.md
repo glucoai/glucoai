@@ -4,16 +4,16 @@ IA
 
 
 ROADMAP DETALHADO v2
-9 Fases · Mobile-first + Dashboard Clínico · Prompts para IDE · PT-BR
+13 Fases · Mobile-first + Dashboard Clínico · Prompts para IDE · PT-BR
 
 Campo
 Detalhe
 Projeto
 Gluco IA — AI Metabolic Assistant
 Fases
-9 Fases de Desenvolvimento
+13 Fases de Desenvolvimento
 Estimativa
-16 a 24 semanas (equipe 2-3 devs)
+18 a 26 semanas (equipe 2-3 devs)
 Metodologia
 Sprints de 2 semanas com entregável funcional
 UI/UX
@@ -24,7 +24,7 @@ Formato
 Prompt-first: cada fase com instrução para IDE
 
 
-VISÃO GERAL — 9 FASES
+VISÃO GERAL — 13 FASES
 Cada fase termina com entregável funcional e testável. Não avance sem o critério de aceite cumprido.
 
 Fase
@@ -51,6 +51,10 @@ F5
 Sem 8-10
 Integração WhatsApp
 Paciente envia '120' → registrado; menu PT-BR funciona
+F5A
+Sem 10-11
+Onboarding WhatsApp
+Mensagem imersiva; termos aceitos; dados coletados; risco e macros calculados
 F6
 Sem 10-13
 IA (GPT-4o + Vision API)
@@ -67,6 +71,22 @@ F9
 Sem 17-22
 Deploy + CI/CD + Lançamento
 HTTPS; CI passando; monitoramento ativo
+F10
+Sem 22-23
+Esquema de Cores — Midnight Void
+Paleta aplicada; toggle de tema ativo
+F11
+Sem 23-24
+Identidade Visual — Logos e Favicon
+Logos e favicon atualizados em todo o app
+F12
+Sem 24-25
+SEO Avançado + Robots + Compartilhamento
+Sitemap, robots.txt, OG/Twitter e metas completas
+F13
+Sem 25-26
+Configurações WhatsApp (Dashboard)
+Formulário com Business ID, webhook e token de verificação
 
 
 FASE 1  ·  SETUP DO PROJETO
@@ -341,6 +361,39 @@ FRONTEND — Tela de Mensagens:
   Rodapé: input 'Digite uma mensagem...' + botão 'Enviar'
   Timestamps relativos: 'agora', 'há 5 min', '14:32'
 
+FASE 5A  ·  ONBOARDING WHATSAPP
+⏱  1 semana
+🟢 Concluído
+
+📋 Tarefas
+🟢  👋  Mensagem imersiva de boas-vindas com botões
+🟢  ✅  Aceite de termos de uso com botões (aceitar/recusar)
+🟢  🧾  Coleta de nome com dupla confirmação (confirmar/editar)
+🟢  🚻  Coleta de sexo
+🟢  ✉️  Coleta de e-mail com dupla confirmação (confirmar/editar)
+🟢  🎂  Coleta de idade
+🟢  📏  Coleta de altura
+🟢  ⚖️  Coleta de peso
+🟢  🩸  Coleta da última glicemia
+🟢  🧩  Coleta de sintomas e complicações
+🟢  📊  Escala de risco calculada após coleta
+🟢  🍽️  Macros diários calculados com base no peso
+
+🤖  PROMPT IDE — FASE 5A — ONBOARDING WHATSAPP
+BACKEND (src/modulos/whatsapp):
+  - Fluxo de onboarding acionado na primeira mensagem do paciente
+  - Mensagem de boas-vindas com botões e linguagem simples
+  - Botões para aceitar termos (aceitar/recusar) antes de coletar dados
+  - Coleta guiada com validação por etapa e confirmação de nome e e-mail
+  - Persistir dados do paciente e registrar status do onboarding
+  - Calcular Escala de Risco após coleta completa
+  - Calcular macros diários com base no peso
+
+WHATSAPP — Conversas:
+  - Cada etapa responde com botões quando aplicável
+  - Mensagens sempre em PT-BR e sem jargão médico
+  - Repetição de etapa em caso de edição ou validação falha
+
 
 FASE 6  ·  IA — GPT-5.1 + VISION API
 ⏱  3 semanas
@@ -560,6 +613,48 @@ FRONTEND:
   Trocar em todas as páginas e layouts com logo
 
 
+FASE 12  ·  SEO AVANÇADO + ROBOTS + COMPARTILHAMENTO
+⏱  1 semana
+🟢 Concluído
+
+
+📋 Tarefas
+🟢  🧭  Metas por página (title, description, canonical) em PT-BR
+🟢  🤖  robots.txt com regras de produção e staging
+🟢  🗺️  sitemap.xml automático com rotas públicas
+🟢  🖼️  Open Graph + Twitter Card com imagem oficial
+🟢  🧩  Schema.org JSON-LD (Organization, WebSite, WebPage)
+🟢  📈  Auditoria Lighthouse com ajustes básicos de SEO
+
+🤖  PROMPT IDE — FASE 12 — SEO AVANÇADO
+FRONTEND:
+  - Definir meta tags dinâmicas por rota pública
+  - Gerar sitemap.xml com URLs públicas e canonical
+  - Incluir robots.txt com bloqueios de rotas privadas
+  - Configurar Open Graph e Twitter Card com imagem oficial
+  - Adicionar JSON-LD para Organization e WebSite
+  - Validar com Lighthouse e corrigir warnings de SEO
+
+
+FASE 13  ·  CONFIGURAÇÕES WHATSAPP (DASHBOARD)
+⏱  1 semana
+🟢 Concluído
+
+
+📋 Tarefas
+🟢  🧭  Frontend: sidebar interno com seções de configurações
+🟢  💬  Frontend: formulário WhatsApp com Business ID e status ativo
+🟢  🔗  Frontend: exibir webhook e token de verificação com copiar
+
+🤖  PROMPT IDE — FASE 13 — CONFIGURAÇÕES WHATSAPP
+FRONTEND:
+  - Criar página de configurações com sidebar interno
+  - Adicionar seção WhatsApp com formulário (ID do Número, Número de Exibição, Business ID)
+  - Exibir URL de webhook e token de verificação após criar
+  - Botões de copiar e ações (editar, regenerar token, excluir)
+  - Textos em PT-BR e tokens do Design System
+
+
 ✅ Checklist Final Pré-Lançamento
    •   Design System Gluco IA aplicado em 100% das telas
    •   Zero texto em inglês na interface do usuário
@@ -637,6 +732,16 @@ F11 - Logos
 Identidade Visual + Favicon
 _______
 Sem 23-24
+🟢 Concluído
+F12 - SEO
+SEO Avançado + Robots + Compartilhamento
+_______
+Sem 24-25
+🟢 Concluído
+F13 - Config WA
+Configurações WhatsApp no Dashboard
+_______
+Sem 25-26
 🟢 Concluído
 
 
