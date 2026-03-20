@@ -543,6 +543,23 @@ FRONTEND:
   Estados: #F5A623 (warning), #FF4D4D (alert), #7C9EFF (info)
 
 
+FASE 11  ·  IDENTIDADE VISUAL — LOGOS E FAVICON
+⏱  1 dia
+🟢 Concluído
+
+
+📋 Tarefas
+🟢  🖼️  Substituir logos do projeto para fundo claro e escuro
+🟢  ⭐  Atualizar favicon em todas as telas
+🟢  📘  Documentar arquivos oficiais no PRD
+
+🤖  PROMPT IDE — FASE 11 — LOGOS E FAVICON
+FRONTEND:
+  index.html: favicon = /icone-gluco-ai-favicon.png
+  Logos: /logo-gluco-ai-para-fundo-escuro.png e /logo-gluco-ai-para-fundo-claro.png
+  Trocar em todas as páginas e layouts com logo
+
+
 ✅ Checklist Final Pré-Lançamento
    •   Design System Gluco IA aplicado em 100% das telas
    •   Zero texto em inglês na interface do usuário
@@ -615,6 +632,11 @@ F10 - Cores
 Midnight Void + Tokens Globais
 _______
 Sem 22-23
+🟢 Concluído
+F11 - Logos
+Identidade Visual + Favicon
+_______
+Sem 23-24
 🟢 Concluído
 
 

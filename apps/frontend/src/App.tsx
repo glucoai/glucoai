@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
 import { EsqueciSenhaPage } from './pages/EsqueciSenhaPage';
@@ -26,6 +27,17 @@ function RotaProtegida({ children, perfis }: { children: JSX.Element; perfis: st
 }
 
 export default function App() {
+  useEffect(() => {
+    const temaSalvo = localStorage.getItem('gluco-tema');
+    if (temaSalvo === 'dark' || temaSalvo === 'light') {
+      document.documentElement.setAttribute('data-theme', temaSalvo);
+      return;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

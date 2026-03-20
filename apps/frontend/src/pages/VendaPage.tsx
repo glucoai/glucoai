@@ -20,7 +20,18 @@ function HeroVenda() {
     <section className="bg-gradient-to-br from-primaria/10 via-fundo to-sucesso/10">
       <div className="max-w-6xl mx-auto px-6 pt-8 pb-14">
         <header className="flex items-center justify-between">
-          <img src="/LOGO GLUCO AI.svg" alt="Gluco IA" className="h-8 w-auto" />
+          <div className="flex items-center">
+            <img
+              src="/logo-gluco-ai-para-fundo-escuro.png"
+              alt="Gluco IA"
+              className="h-8 w-auto logo-tema-escuro"
+            />
+            <img
+              src="/logo-gluco-ai-para-fundo-claro.png"
+              alt="Gluco IA"
+              className="h-8 w-auto logo-tema-claro"
+            />
+          </div>
           <div className="flex items-center gap-3">
             <Link to="/entrar" className="text-sm text-texto font-medium">Entrar</Link>
             <BotaoSecundario className="text-sm px-4 py-2">Falar com especialista</BotaoSecundario>
@@ -144,7 +155,18 @@ function RodapeVenda() {
     <footer className="bg-fundo border-t border-borda">
       <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
-          <img src="/LOGO GLUCO AI.svg" alt="Gluco IA" className="h-6 w-auto" />
+          <div className="flex items-center">
+            <img
+              src="/logo-gluco-ai-para-fundo-escuro.png"
+              alt="Gluco IA"
+              className="h-6 w-auto logo-tema-escuro"
+            />
+            <img
+              src="/logo-gluco-ai-para-fundo-claro.png"
+              alt="Gluco IA"
+              className="h-6 w-auto logo-tema-claro"
+            />
+          </div>
           <div className="text-sm text-texto">Tecnologia cuidando da sua glicemia.</div>
         </div>
         <div className="text-sm text-texto">CNPJ: 34.326.640/0001-08</div>

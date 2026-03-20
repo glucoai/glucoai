@@ -197,9 +197,14 @@ export function LayoutDesktop({ children }: Props) {
       <aside className="hidden lg:flex flex-col w-64 bg-fundo border-r border-borda">
         <div className="h-16 flex items-center px-6">
           <img
-            src="/LOGO GLUCO AI.svg"
+            src="/logo-gluco-ai-para-fundo-escuro.png"
             alt="Gluco IA"
-            className="h-7 w-auto"
+            className="h-7 w-auto logo-tema-escuro"
+          />
+          <img
+            src="/logo-gluco-ai-para-fundo-claro.png"
+            alt="Gluco IA"
+            className="h-7 w-auto logo-tema-claro"
           />
         </div>
         <div className="border-b border-borda" />

@@ -57,3 +57,19 @@ body {
   background: var(--cor-fundo);
   -webkit-font-smoothing: antialiased;
 }
+
+.logo-tema-escuro {
+  display: block;
+}
+
+.logo-tema-claro {
+  display: none;
+}
+
+[data-theme='light'] .logo-tema-escuro {
+  display: none;
+}
+
+[data-theme='light'] .logo-tema-claro {
+  display: block;
+}

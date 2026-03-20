@@ -55,6 +55,16 @@ HEX + Uso
 --cor-borda
 #1C2235 — Bordas e divisores em superfícies escuras
 
+🖼️ Logos e Ícones
+Uso
+Arquivo
+Logo para fundo escuro
+/logo-gluco-ai-para-fundo-escuro.png
+Logo para fundo claro
+/logo-gluco-ai-para-fundo-claro.png
+Favicon
+/icone-gluco-ai-favicon.png
+
 
 🔤 Tipografia
 Uso
