@@ -6,8 +6,10 @@ type WebhookMensagem = {
   text?: { body?: string };
   image?: { id?: string };
   interactive?: {
+    type?: string;
     button_reply?: { id?: string; title?: string };
     list_reply?: { id?: string; title?: string };
+    nfm_reply?: { response_json?: string };
   };
 };
 
@@ -31,6 +33,8 @@ type MensagemEntrada = {
   tipo: 'text' | 'image' | 'interactive' | 'unknown';
   texto?: string;
   imagemId?: string;
+  interactiveTipo?: string;
+  flowResponseJson?: string;
 };
 
 type RotaMensagem =

@@ -1,12 +1,19 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../../config/env.js';
-import { configuracaoWhatsappSchema, webhookBodySchema, webhookQuerySchema } from './schema.js';
+import {
+  configuracaoWhatsappParamsSchema,
+  configuracaoWhatsappSchema,
+  webhookBodySchema,
+  webhookQuerySchema,
+} from './schema.js';
 import {
   processarWebhook,
+  processarWebhookComNumero,
   verificarAssinatura,
   criarConfiguracaoWhatsappService,
   obterConfiguracaoWhatsappService,
   obterConfiguracaoWhatsappPorNumeroService,
+  excluirConfiguracaoWhatsappService,
 } from './service.js';
 
 type RawBodyRequest = FastifyRequest & { rawBody?: string };
@@ -21,6 +28,10 @@ function respostaNaoAutorizado(reply: FastifyReply, message: string) {
 
 function respostaErro(reply: FastifyReply, message: string) {
   return reply.code(500).send({ error: 'INTERNAL_ERROR', message });
+}
+
+function respostaNaoEncontrado(reply: FastifyReply, message: string) {
+  return reply.code(404).send({ error: 'NOT_FOUND', message });
 }
 
 function respostaConflito(reply: FastifyReply, message: string) {
@@ -84,7 +95,13 @@ async function whatsappRoutes(app: FastifyInstance) {
       if (!resultado.success) {
         return respostaValidacao(reply, 'Payload inválido.', resultado.error.issues[0]?.path[0]);
       }
-      await processarWebhook(request.body as object);
+      const params = request.params as { idNumero?: string };
+      console.log('[GLUCO:WHATSAPP]', { acao: 'webhook_post', idNumero: params?.idNumero });
+      if (params?.idNumero) {
+        await processarWebhookComNumero(request.body as object, params.idNumero);
+      } else {
+        await processarWebhook(request.body as object);
+      }
       return reply.send({ ok: true });
     } catch {
       return respostaErro(reply, 'Erro ao processar webhook.');
@@ -129,6 +146,30 @@ async function whatsappRoutes(app: FastifyInstance) {
       return respostaErro(reply, 'Erro ao criar configuração do WhatsApp.');
     }
   });
+
+  app.delete(
+    '/whatsapp/configuracoes/:id',
+    { preHandler: preHandlerPadrao(app) },
+    async (request, reply) => {
+      try {
+        const clinicaId = await obterClinicaId(request);
+        if (!clinicaId) {
+          return reply.code(401).send({ error: 'AUTH_ERROR', message: 'Token inválido.' });
+        }
+        const params = configuracaoWhatsappParamsSchema.safeParse(request.params);
+        if (!params.success) {
+          return respostaValidacao(reply, 'Configuração inválida.', params.error.issues[0]?.path[0]);
+        }
+        const resultado = await excluirConfiguracaoWhatsappService(clinicaId, params.data.id);
+        if (!resultado.count) {
+          return respostaNaoEncontrado(reply, 'Configuração do WhatsApp não encontrada.');
+        }
+        return reply.send({ ok: true });
+      } catch {
+        return respostaErro(reply, 'Erro ao excluir configuração do WhatsApp.');
+      }
+    },
+  );
 }
 
 export { whatsappRoutes };

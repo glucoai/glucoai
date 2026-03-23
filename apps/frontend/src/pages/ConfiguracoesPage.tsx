@@ -96,10 +96,14 @@ function gerarTokenVerificacao(businessId: string) {
 }
 
 function criarWebhookUrl(idNumero: string) {
-  const baseUrl = import.meta.env.VITE_API_URL ?? apiUrl ?? 'http://localhost:3000';
-  const baseComApi = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+  const baseUrl =
+    import.meta.env.VITE_URL_WEBHOOK ??
+    import.meta.env.VITE_API_URL ??
+    apiUrl ??
+    'http://localhost:3000';
+  const baseNormalizada = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   const sufixo = idNumero ? `/${idNumero}` : '';
-  return `${baseComApi}/whatsapp/webhook${sufixo}`;
+  return `${baseNormalizada}/whatsapp/webhook${sufixo}`;
 }
 
 function headersAutorizacao(token?: string | null) {
@@ -144,6 +148,19 @@ async function criarConfiguracaoWhatsapp(token: string | null, dados: FormWhatsA
     throw new Error('Configuração não retornada pela API.');
   }
   return payload.configuracao;
+}
+
+async function excluirConfiguracaoWhatsapp(token: string | null, id: string) {
+  const resposta = await fetch(`${apiUrl}/whatsapp/configuracoes/${id}`, {
+    method: 'DELETE',
+    headers: headersAutorizacao(token),
+  });
+  if (!resposta.ok) {
+    const payload = await resposta.json().catch(() => null);
+    const mensagem = payload?.message ?? 'Erro ao excluir configuração do WhatsApp.';
+    throw new Error(mensagem);
+  }
+  return true;
 }
 
 function CabecalhoConfiguracoes() {
@@ -241,9 +258,11 @@ type ResumoProps = {
   config: ConfigWhatsApp;
   onCopiar: (valor: string) => void;
   onAlternarAtivo: () => void;
+  onExcluir: () => void;
+  excluindo: boolean;
 };
 
-function ResumoWhatsApp({ config, onCopiar, onAlternarAtivo }: ResumoProps) {
+function ResumoWhatsApp({ config, onCopiar, onAlternarAtivo, onExcluir, excluindo }: ResumoProps) {
   const criadoEm = new Date(config.criadoEm).toLocaleDateString('pt-BR');
   return (
     <Card className="border border-borda bg-fundo/90">
@@ -256,7 +275,9 @@ function ResumoWhatsApp({ config, onCopiar, onAlternarAtivo }: ResumoProps) {
           <div className="flex flex-wrap gap-2">
             <BotaoSecundario className="px-4 py-2">Editar</BotaoSecundario>
             <BotaoSecundario className="px-4 py-2">Regenerar Token</BotaoSecundario>
-            <BotaoPerigo className="px-4 py-2">Excluir</BotaoPerigo>
+            <BotaoPerigo className="px-4 py-2" onClick={onExcluir} disabled={excluindo}>
+              {excluindo ? 'Excluindo...' : 'Excluir'}
+            </BotaoPerigo>
           </div>
         </div>
         <LinhaCopiavel rotulo="Webhook" valor={config.webhookUrl} onCopiar={onCopiar} />
@@ -277,6 +298,44 @@ function ResumoWhatsApp({ config, onCopiar, onAlternarAtivo }: ResumoProps) {
         </label>
       </div>
     </Card>
+  );
+}
+
+type ConfirmacaoProps = {
+  aberto: boolean;
+  titulo: string;
+  descricao: string;
+  confirmando: boolean;
+  onCancelar: () => void;
+  onConfirmar: () => void;
+};
+
+function ConfirmacaoExcluir({
+  aberto,
+  titulo,
+  descricao,
+  confirmando,
+  onCancelar,
+  onConfirmar,
+}: ConfirmacaoProps) {
+  if (!aberto) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-fundo/70 backdrop-blur-sm">
+      <Card className="w-full max-w-md border border-borda bg-superficie p-6 shadow-modal">
+        <div className="space-y-4">
+          <div className="text-lg font-semibold text-texto">{titulo}</div>
+          <div className="text-sm text-texto/70">{descricao}</div>
+          <div className="flex justify-end gap-3">
+            <BotaoSecundario className="px-4 py-2" onClick={onCancelar} disabled={confirmando}>
+              Cancelar
+            </BotaoSecundario>
+            <BotaoPerigo className="px-4 py-2" onClick={onConfirmar} disabled={confirmando}>
+              {confirmando ? 'Excluindo...' : 'Excluir'}
+            </BotaoPerigo>
+          </div>
+        </div>
+      </Card>
+    </div>
   );
 }
 
@@ -376,6 +435,8 @@ function useWhatsAppForm(token?: string | null) {
   const [sucesso, setSucesso] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [carregandoInicial, setCarregandoInicial] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
+  const [confirmarExclusao, setConfirmarExclusao] = useState(false);
 
   const webhookPreview = useMemo(() => criarWebhookUrl(form.idNumero), [form.idNumero]);
   const tokenVerificacaoPreview = useMemo(
@@ -477,6 +538,42 @@ function useWhatsAppForm(token?: string | null) {
     }
   }
 
+  function abrirConfirmacaoExclusao() {
+    if (!config) return;
+    setConfirmarExclusao(true);
+  }
+
+  function fecharConfirmacaoExclusao() {
+    setConfirmarExclusao(false);
+  }
+
+  async function confirmarExclusaoWhatsApp() {
+    if (!config) return;
+    if (!token) {
+      setErro('Sessão expirada. Faça login novamente.');
+      return;
+    }
+    setExcluindo(true);
+    setErro('');
+    setSucesso('');
+    try {
+      await excluirConfiguracaoWhatsapp(token, config.id);
+      setConfig(null);
+      setForm({
+        idNumero: '',
+        numeroExibicao: '',
+        businessId: '',
+        ativo: true,
+      });
+      setSucesso('Configuração removida com sucesso.');
+      setConfirmarExclusao(false);
+    } catch (error) {
+      setErro((error as Error).message);
+    } finally {
+      setExcluindo(false);
+    }
+  }
+
   return {
     form,
     webhookPreview,
@@ -486,10 +583,15 @@ function useWhatsAppForm(token?: string | null) {
     sucesso,
     carregando,
     carregandoInicial,
+    excluindo,
+    confirmarExclusao,
     atualizar,
     alternarAtivo,
     cancelar,
     criar,
+    abrirConfirmacaoExclusao,
+    fecharConfirmacaoExclusao,
+    confirmarExclusaoWhatsApp,
   };
 }
 
@@ -522,9 +624,14 @@ function PainelWhatsApp() {
     carregando,
     carregandoInicial,
     config,
+    excluindo,
+    confirmarExclusao,
     atualizar,
     cancelar,
     criar,
+    abrirConfirmacaoExclusao,
+    fecharConfirmacaoExclusao,
+    confirmarExclusaoWhatsApp,
     alternarAtivo,
   } = useWhatsAppForm(token);
   const { mensagemCopia, copiar } = useMensagemCopia();
@@ -544,8 +651,22 @@ function PainelWhatsApp() {
       />
       <MensagemCopia mensagem={mensagemCopia} />
       {config ? (
-        <ResumoWhatsApp config={config} onCopiar={copiar} onAlternarAtivo={alternarAtivo} />
+        <ResumoWhatsApp
+          config={config}
+          onCopiar={copiar}
+          onAlternarAtivo={alternarAtivo}
+          onExcluir={abrirConfirmacaoExclusao}
+          excluindo={excluindo}
+        />
       ) : null}
+      <ConfirmacaoExcluir
+        aberto={confirmarExclusao}
+        titulo="Excluir configuração"
+        descricao="Essa ação remove a configuração do WhatsApp e não poderá ser desfeita."
+        confirmando={excluindo}
+        onCancelar={fecharConfirmacaoExclusao}
+        onConfirmar={confirmarExclusaoWhatsApp}
+      />
     </div>
   );
 }

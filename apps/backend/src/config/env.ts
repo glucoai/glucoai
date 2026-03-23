@@ -42,6 +42,7 @@ const schema = z.object({
   WHATSAPP_VERIFY_TOKEN: optionalString,
   WHATSAPP_APP_SECRET: optionalString,
   WHATSAPP_PHONE_NUMBER_ID: optionalString,
+  FLOW_ID: optionalString,
 });
 
 const env = schema.parse({
@@ -67,6 +68,7 @@ const env = schema.parse({
   WHATSAPP_VERIFY_TOKEN: process.env.WHATSAPP_VERIFY_TOKEN,
   WHATSAPP_APP_SECRET: process.env.WHATSAPP_APP_SECRET,
   WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
+  FLOW_ID: process.env.FLOW_ID,
 });
 
 export { env };

@@ -378,6 +378,9 @@ FASE 5A  ·  ONBOARDING WHATSAPP
 🟢  🧩  Coleta de sintomas e complicações
 🟢  📊  Escala de risco calculada após coleta
 🟢  🍽️  Macros diários calculados com base no peso
+🟢  🧬  Onboarding via Flow do WhatsApp
+🟢  📜  Termos pré-análise com botões e recuperação
+🟢  🗂️  Mapeamento de email, país e data de nascimento no Flow
 
 🤖  PROMPT IDE — FASE 5A — ONBOARDING WHATSAPP
 BACKEND (src/modulos/whatsapp):
@@ -645,6 +648,9 @@ FASE 13  ·  CONFIGURAÇÕES WHATSAPP (DASHBOARD)
 🟢  🧭  Frontend: sidebar interno com seções de configurações
 🟢  💬  Frontend: formulário WhatsApp com Business ID e status ativo
 🟢  🔗  Frontend: exibir webhook e token de verificação com copiar
+🟢  🗑️  Frontend: excluir configuração do WhatsApp
+🟢  🗄️  Backend: endpoint para excluir configuração do WhatsApp
+🟢  ✅  Webhook: URL compatível com validação da Meta
 
 🤖  PROMPT IDE — FASE 13 — CONFIGURAÇÕES WHATSAPP
 FRONTEND:

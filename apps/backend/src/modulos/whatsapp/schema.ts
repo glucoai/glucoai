@@ -18,10 +18,19 @@ const configuracaoWhatsappSchema = z.object({
   idNumero: z.string().min(1),
   numeroExibicao: z.string().min(1),
   businessId: z.string().min(1),
-  webhookUrl: z.string().url().refine((valor) => valor.includes('/api/whatsapp/webhook'), {
+  webhookUrl: z.string().url().refine((valor) => valor.includes('/whatsapp/webhook'), {
     message: 'Webhook inválido.',
   }),
   ativo: z.boolean().optional().default(true),
 });
 
-export { webhookQuerySchema, webhookBodySchema, configuracaoWhatsappSchema };
+const configuracaoWhatsappParamsSchema = z.object({
+  id: z.string().min(1),
+});
+
+export {
+  webhookQuerySchema,
+  webhookBodySchema,
+  configuracaoWhatsappSchema,
+  configuracaoWhatsappParamsSchema,
+};

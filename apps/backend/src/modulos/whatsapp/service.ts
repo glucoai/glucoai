@@ -1,6 +1,9 @@
 import crypto from 'crypto';
+import { Prisma } from '@prisma/client';
 import { env } from '../../config/env.js';
 import {
+  desativarPacienteWhatsapp,
+  buscarPacientePorId,
   buscarPacientePorTelefone,
   salvarMensagem,
   criarGlicemia,
@@ -8,7 +11,9 @@ import {
   criarConfiguracaoWhatsapp,
   buscarConfiguracaoWhatsappPorClinica,
   buscarConfiguracaoWhatsappPorIdNumero,
+  excluirConfiguracaoWhatsapp,
   atualizarPacienteOnboarding,
+  criarPacienteWhatsapp,
 } from './repository.js';
 import type { MensagemEntrada, RotaMensagem, WebhookPayload } from './types.js';
 
@@ -20,11 +25,6 @@ const menuMensagem =
   '📈 Digitar "histórico" para ver os últimos 7 dias\n' +
   '💊 Digitar "perfil" para ver suas informações';
 
-type OnboardingDados = {
-  nomePendente?: string;
-  emailPendente?: string;
-};
-
 type PacienteOnboarding = {
   id: string;
   nome: string;
@@ -32,42 +32,389 @@ type PacienteOnboarding = {
   tipoDiabetes: string;
   metaGlicemicaMin: number | null;
   metaGlicemicaMax: number | null;
-  onboardingStatus?: string | null;
-  onboardingEtapa?: string | null;
-  onboardingDados?: unknown;
   ultimaGlicemia?: number | null;
   pesoKg?: number | null;
+  alturaCm?: number | null;
+  onboardingStatus?: string | null;
+  onboardingEtapa?: string | null;
+  onboardingDados?: unknown | null;
+  riscoEscala?: string | null;
 };
 
-const botoesTermos = [
-  { id: 'TERMOS_ACEITAR', titulo: 'Aceitar' },
-  { id: 'TERMOS_RECUSAR', titulo: 'Recusar' },
+type ConfiguracaoWhatsappMin = {
+  clinicaId: string;
+  idNumero: string;
+};
+
+const gatilhosFlow = [
+  'oi',
+  'olá',
+  'ola',
+  'oii',
+  'hello',
+  'hi',
+  'começar',
+  'comecar',
+  'start',
+  'quero',
+  'cadastro',
+  'cadastrar',
 ];
 
-const botoesConfirmarNome = [
-  { id: 'NOME_CONFIRMAR', titulo: 'Confirmar' },
-  { id: 'NOME_EDITAR', titulo: 'Editar' },
+const botoesTermosAnalise = [
+  { id: 'TERMO_CONCORDAR', titulo: 'Concordar' },
+  { id: 'TERMO_DISCORDAR', titulo: 'Discordar' },
 ];
 
-const botoesConfirmarEmail = [
-  { id: 'EMAIL_CONFIRMAR', titulo: 'Confirmar' },
-  { id: 'EMAIL_EDITAR', titulo: 'Editar' },
-];
-
-const botoesSexo = [
-  { id: 'SEXO_FEMININO', titulo: 'Feminino' },
-  { id: 'SEXO_MASCULINO', titulo: 'Masculino' },
-  { id: 'SEXO_OUTRO', titulo: 'Outro' },
-  { id: 'SEXO_NAO_INFORMAR', titulo: 'Prefiro não informar' },
-];
-
-const botoesSintomas = [
-  { id: 'SINTOMAS_SIM', titulo: 'Sim' },
-  { id: 'SINTOMAS_NAO', titulo: 'Não' },
+const botoesRecuperacaoTermos = [
+  { id: 'TERMO_CONCORDAR_RETORNO', titulo: 'Concordar Termos' },
+  { id: 'TERMO_EXCLUIR_CADASTRO', titulo: 'Excluir Cadastro' },
 ];
 
 function normalizarTelefone(telefone: string) {
   return telefone.replace(/\D/g, '');
+}
+
+function detectarConflitoPrisma(erro: unknown) {
+  const codigo = (erro as { code?: string })?.code;
+  return codigo === 'P2002';
+}
+
+async function obterConfiguracaoWhatsapp(idNumero?: string) {
+  if (!idNumero) {
+    return null;
+  }
+  const configuracao = (await buscarConfiguracaoWhatsappPorIdNumero(
+    idNumero,
+  )) as ConfiguracaoWhatsappMin | null;
+  return configuracao;
+}
+
+function mapearGeneroFlow(valor: unknown) {
+  if (typeof valor !== 'string') return null;
+  const texto = normalizarResposta(valor);
+  if (['masculino', 'm'].includes(texto)) return 'Masculino';
+  if (['feminino', 'f'].includes(texto)) return 'Feminino';
+  if (['outro'].includes(texto)) return 'Outro';
+  if (['nao_informar', 'nao informar', 'prefiro nao informar', 'prefiro não informar'].includes(texto)) {
+    return 'Prefiro não informar';
+  }
+  return valor;
+}
+
+function mapearTipoDiabetesFlow(valor: unknown) {
+  if (typeof valor !== 'string') return null;
+  const texto = normalizarResposta(valor);
+  if (['tipo1', 'tipo_1', 'tipo 1'].includes(texto)) return 'TIPO_1';
+  if (['tipo2', 'tipo_2', 'tipo 2'].includes(texto)) return 'TIPO_2';
+  if (['gestacional'].includes(texto)) return 'GESTACIONAL';
+  if (['pre', 'pré', 'pre_diabetes', 'pre diabetes', 'pré-diabetes'].includes(texto)) return 'PRE';
+  return null;
+}
+
+function obterPrimeiroNome(nome?: string) {
+  if (!nome) return 'por aqui';
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  return partes[0] ?? 'por aqui';
+}
+
+function classificarImc(imc: number) {
+  if (imc < 18.5) return 'Baixo peso';
+  if (imc < 25) return 'Normopeso';
+  if (imc < 30) return 'Sobrepeso';
+  return 'Obesidade';
+}
+
+function formatarRiscoTexto(risco?: string | null) {
+  if (!risco) return 'médio';
+  const texto = risco.toLowerCase();
+  if (texto.includes('alto')) return 'alto';
+  if (texto.includes('baixo')) return 'baixo';
+  return 'médio';
+}
+
+function montarFraseRisco(risco: string) {
+  if (risco === 'alto') {
+    return 'Se continuar assim, sua glicemia pode se desregular com mais facilidade.';
+  }
+  if (risco === 'baixo') {
+    return 'Você ainda está em uma zona de segurança, mas precisa manter constância.';
+  }
+  return 'Você já mostra sinais de alerta e precisa ajustar a rotina para evitar piora.';
+}
+
+function montarDadosAnalise(paciente: PacienteOnboarding) {
+  const primeiroNome = obterPrimeiroNome(paciente.nome);
+  const imc =
+    typeof paciente.pesoKg === 'number' && typeof paciente.alturaCm === 'number'
+      ? Number((paciente.pesoKg / Math.pow(paciente.alturaCm / 100, 2)).toFixed(1))
+      : null;
+  const classificacaoImc = imc ? classificarImc(imc) : 'Não informado';
+  const riscoTexto = formatarRiscoTexto(paciente.riscoEscala);
+  const fraseRisco = montarFraseRisco(riscoTexto);
+  return { primeiroNome, imc, classificacaoImc, riscoTexto, fraseRisco };
+}
+
+async function enviarAnalisePosFlow(
+  telefone: string,
+  paciente: PacienteOnboarding,
+  phoneNumberId?: string,
+) {
+  const { primeiroNome, imc, classificacaoImc, riscoTexto, fraseRisco } = montarDadosAnalise(paciente);
+  await new Promise((resolve) => setTimeout(resolve, 16000));
+  const mensagemValor =
+    `*${primeiroNome}*, analisei seu perfil… e vou ser direto com você 👇\n\n` +
+    '🧬 Seu corpo já está mostrando sinais importantes\n' +
+    `📊 *Seu IMC*: ${imc ?? 'Não informado'}\n` +
+    `*Classificação*: ${classificacaoImc}\n` +
+    `⚠️*Risco Metabólico*: ${riscoTexto}\n\n` +
+    '👉 *Isso significa que*:\n' +
+    `${fraseRisco}\n\n` +
+    '🔥 *Mas a boa notícia é*:\n' +
+    'Você está no momento PERFEITO para controlar isso...';
+  await enviarTextoComRegistro(telefone, paciente.id, mensagemValor, phoneNumberId);
+  await new Promise((resolve) => setTimeout(resolve, 3500));
+  const mensagemPosicionamento =
+    `Agora vem a parte mais importante, *${primeiroNome}*…\n\n` +
+    'A partir de hoje eu vou:\n' +
+    '✅ Analisar suas refeições 🍽️\n' +
+    '✅ Prever impacto na glicemia 📈\n' +
+    '✅ Te ajudar a evitar picos 🚫\n' +
+    '✅ E te guiar até o controle real\n\n' +
+    '“Nos próximos 7 dias eu vou acompanhar você de perto… e você vai ver sua glicemia começar a responder 👀”\n\n' +
+    '1️⃣ Me envie a foto da sua próxima refeição\n' +
+    '2️⃣ Ou me envie sua glicemia atual\n\n' +
+    '👉 E eu te mostro exatamente o que fazer a partir de agora.';
+  await enviarTextoComRegistro(telefone, paciente.id, mensagemPosicionamento, phoneNumberId);
+}
+
+async function enviarBotoesWhatsApp(
+  telefone: string,
+  texto: string,
+  botoes: { id: string; titulo: string }[],
+  phoneNumberId?: string,
+) {
+  const numeroId = phoneNumberId ?? env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!env.WHATSAPP_TOKEN || !numeroId) {
+    throw new Error('Configuração do WhatsApp não encontrada.');
+  }
+  console.log('[GLUCO:WHATSAPP]', {
+    acao: 'enviar_botoes',
+    telefone,
+    botoes: botoes.map((botao) => botao.id),
+    phoneNumberId: numeroId,
+  });
+  const url = `https://graph.facebook.com/v20.0/${numeroId}/messages`;
+  for (let tentativa = 1; tentativa <= 3; tentativa += 1) {
+    try {
+      const resposta = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${env.WHATSAPP_TOKEN}`,
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: telefone,
+          type: 'interactive',
+          interactive: {
+            type: 'button',
+            body: { text: texto },
+            action: {
+              buttons: botoes.map((botao) => ({
+                type: 'reply',
+                reply: { id: botao.id, title: botao.titulo },
+              })),
+            },
+          },
+        }),
+      });
+      if (!resposta.ok) {
+        const erroTexto = await resposta.text();
+        console.log('[GLUCO:WHATSAPP]', {
+          acao: 'erro_enviar_botoes',
+          telefone,
+          status: resposta.status,
+          erro: erroTexto,
+        });
+        throw new Error(erroTexto);
+      }
+      console.log('[GLUCO:WHATSAPP]', { acao: 'botoes_enviados', telefone, status: resposta.status });
+      return true;
+    } catch (erro) {
+      console.log('[GLUCO:WHATSAPP]', {
+        acao: 'falha_enviar_botoes',
+        telefone,
+        tentativa,
+        erro: (erro as Error).message,
+      });
+      if (tentativa === 3) {
+        throw erro;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300 * tentativa));
+    }
+  }
+  return false;
+}
+
+async function enviarBotoesComRegistro(
+  telefone: string,
+  pacienteId: string,
+  texto: string,
+  botoes: { id: string; titulo: string }[],
+  phoneNumberId?: string,
+) {
+  try {
+    await enviarBotoesWhatsApp(telefone, texto, botoes, phoneNumberId);
+  } catch (erro) {
+    console.log('[GLUCO:WHATSAPP]', {
+      acao: 'falha_envio_botoes',
+      telefone,
+      pacienteId,
+      erro: (erro as Error).message,
+    });
+    return;
+  }
+  try {
+    await salvarMensagem({
+      pacienteId,
+      conteudo: texto,
+      remetente: 'SISTEMA',
+      tipo: 'TEMPLATE',
+    });
+  } catch (erro) {
+    console.log('[GLUCO:WHATSAPP]', {
+      acao: 'falha_salvar_botoes',
+      telefone,
+      pacienteId,
+      erro: (erro as Error).message,
+    });
+  }
+}
+
+async function processarRespostaFlow(
+  telefone: string,
+  pacienteId: string,
+  responseJson: string,
+  phoneNumberId?: string,
+) {
+  let dadosFlow: Record<string, unknown> | null = null;
+  try {
+    dadosFlow = JSON.parse(responseJson) as Record<string, unknown>;
+  } catch {
+    console.log('[GLUCO:WHATSAPP]', { acao: 'flow_json_invalido', telefone });
+    return;
+  }
+  const existente = await buscarPacientePorId(pacienteId);
+  const dadosExistentes =
+    existente?.onboardingDados && typeof existente.onboardingDados === 'object'
+      ? (existente.onboardingDados as Record<string, unknown>)
+      : null;
+  const termosJaEnviados = dadosExistentes?._termoAnaliseEnviado === true;
+  const nome = obterValorPorChaves(dadosFlow, ['nome', 'name', 'nome_completo', 'nomeCompleto']);
+  const generoBruto = obterValorPorChaves(dadosFlow, ['sexo', 'genero', 'gênero']);
+  const genero = mapearGeneroFlow(generoBruto);
+  const email = obterValorPorChaves(dadosFlow, ['email', 'e-mail']);
+  const tipoDiabetesFlow = mapearTipoDiabetesFlow(
+    obterValorPorChaves(dadosFlow, ['tipo_diabetes', 'tipoDiabetes']),
+  );
+  const dataNascimentoValor = obterValorPorChaves(dadosFlow, [
+    'data_nascimento',
+    'dataNascimento',
+    'nascimento',
+  ]);
+  const paisValor = obterValorPorChaves(dadosFlow, ['pais', 'país', 'country']);
+  const anosDiagnosticoValor = obterValorPorChaves(dadosFlow, [
+    'anos_diabetes',
+    'anosDiagnostico',
+    'anos_diagnostico',
+  ]);
+  const idadeValor = obterValorPorChaves(dadosFlow, ['idade', 'age']);
+  const alturaValor = obterValorPorChaves(dadosFlow, ['altura', 'altura_cm', 'alturaCm']);
+  const pesoValor = obterValorPorChaves(dadosFlow, ['peso', 'peso_kg', 'pesoKg']);
+  const glicemiaValor = obterValorPorChaves(dadosFlow, [
+    'ultima_glicemia',
+    'ultimaglicemia',
+    'glicemia',
+    'pico_glicemia',
+  ]);
+  const sintomasValor = obterValorPorChaves(dadosFlow, [
+    'sintomas',
+    'complicacoes',
+    'sintomasComplicacoes',
+  ]);
+  const emergenciaValor = obterValorPorChaves(dadosFlow, ['emergencia', 'emergência']);
+  const termosValor = obterValorPorChaves(dadosFlow, ['termos', 'termos_aceitos', 'aceite_termos']);
+  const idade = parsearNumero(idadeValor);
+  const alturaCm = alturaValor ? extrairAlturaCm(String(alturaValor)) : null;
+  const pesoKg = pesoValor ? extrairPesoKg(String(pesoValor)) : null;
+  const glicemiaTexto = typeof glicemiaValor === 'string' ? glicemiaValor : '';
+  const glicemiaNumeros = glicemiaTexto.match(/\d+/g)?.map((item) => Number(item)) ?? [];
+  const ultimaGlicemia =
+    glicemiaNumeros.length > 0 ? Math.max(...glicemiaNumeros) : parsearNumero(glicemiaValor);
+  const sintomasArray = Array.isArray(sintomasValor) ? sintomasValor : null;
+  const sintomasComplicacoes =
+    sintomasArray && sintomasArray.length
+      ? true
+      : parsearBooleano(sintomasValor) ?? parsearBooleano(emergenciaValor);
+  const termosAceitos = parsearBooleano(termosValor);
+  const dataNascimento = parsearDataNascimento(dataNascimentoValor);
+  const anosDiagnostico = parsearAnosDiagnostico(anosDiagnosticoValor);
+  const idadeCalculada =
+    !idade && dataNascimento ? calcularIdade(dataNascimento) : (idade ?? null);
+  const risco =
+    typeof ultimaGlicemia === 'number' && typeof sintomasComplicacoes === 'boolean'
+      ? calcularEscalaRisco(ultimaGlicemia, sintomasComplicacoes)
+      : null;
+  const macros = typeof pesoKg === 'number' ? calcularMacrosDiarios(pesoKg) : null;
+  const primeiroNome = obterPrimeiroNome(typeof nome === 'string' ? nome : undefined);
+  const onboardingDadosAtualizados = {
+    ...(dadosExistentes ?? {}),
+    ...dadosFlow,
+  };
+  await atualizarPacienteOnboarding(pacienteId, {
+    nome: typeof nome === 'string' ? nome.trim() : undefined,
+    genero: typeof genero === 'string' ? genero : undefined,
+    email: typeof email === 'string' ? email : undefined,
+    tipoDiabetes: tipoDiabetesFlow ?? undefined,
+    dataNascimento: dataNascimento ?? undefined,
+    idade: typeof idadeCalculada === 'number' ? Math.round(idadeCalculada) : undefined,
+    alturaCm: typeof alturaCm === 'number' ? alturaCm : undefined,
+    pesoKg: typeof pesoKg === 'number' ? pesoKg : undefined,
+    ultimaGlicemia: typeof ultimaGlicemia === 'number' ? Math.round(ultimaGlicemia) : undefined,
+    sintomasComplicacoes: typeof sintomasComplicacoes === 'boolean' ? sintomasComplicacoes : undefined,
+    termosAceitos: typeof termosAceitos === 'boolean' ? termosAceitos : undefined,
+    riscoEscala: risco ?? undefined,
+    macrosDiarios: macros ?? undefined,
+    pais: typeof paisValor === 'string' ? paisValor : undefined,
+    anosdiagnostico: typeof anosDiagnostico === 'number' ? anosDiagnostico : undefined,
+    onboardingStatus: 'EM_ANDAMENTO',
+    onboardingEtapa: 'TERMO_ANALISE_PENDENTE',
+    onboardingDados: onboardingDadosAtualizados as Prisma.InputJsonValue,
+  });
+  console.log('[GLUCO:WHATSAPP]', { acao: 'flow_processado', telefone, pacienteId });
+  if (termosJaEnviados) {
+    return;
+  }
+  const mensagemFechamento =
+    '🎉 Pronto ' +
+    `*${primeiroNome}*! Missão concluída!\n\n` +
+    'Você desbloqueou seu *Perfil Metabólico Inicial* 🧬\n\n' +
+    'Agora deixa comigo que vou analisar tudo aqui… 👇';
+  await enviarTextoComRegistro(telefone, pacienteId, mensagemFechamento, phoneNumberId);
+  const mensagemTermos =
+    `*${primeiroNome}* Seja bem-vindo ao Gluco IA.\n\n` +
+    'Estou analisando seu perfil por aqui. Antes de poder te enviar o resultado, preciso que você concorde com os termos de uso da nossa plataforma.\n\n' +
+    'Nossos termos de uso estão disponíveis em: https://glucoia.com/termos-de-uso\n\n' +
+    'Certifique-se de que leu, e toque em uma das opções abaixo.';
+  await enviarBotoesComRegistro(telefone, pacienteId, mensagemTermos, botoesTermosAnalise, phoneNumberId);
+  const dadosComFlag = {
+    ...(onboardingDadosAtualizados ?? {}),
+    _termoAnaliseEnviado: true,
+  };
+  await atualizarPacienteOnboarding(pacienteId, {
+    onboardingDados: dadosComFlag as Prisma.InputJsonValue,
+  });
 }
 
 function isNumero(texto: string) {
@@ -132,6 +479,7 @@ function extrairMensagens(payload: WebhookPayload): MensagemEntrada[] {
           message.interactive?.button_reply?.id ??
           message.interactive?.list_reply?.title ??
           message.interactive?.list_reply?.id;
+        const flowJson = message.interactive?.nfm_reply?.response_json;
         if (!message.from) {
           continue;
         }
@@ -141,6 +489,8 @@ function extrairMensagens(payload: WebhookPayload): MensagemEntrada[] {
           tipo,
           texto: message.text?.body ?? textoInterativo,
           imagemId: message.image?.id,
+          interactiveTipo: message.interactive?.type,
+          flowResponseJson: flowJson,
         });
       }
     }
@@ -165,11 +515,22 @@ function verificarAssinatura(rawBody: string, assinatura: string | undefined) {
   return crypto.timingSafeEqual(esperadoBuffer, recebidoBuffer);
 }
 
-async function enviarTextoWhatsApp(telefone: string, texto: string) {
-  if (!env.WHATSAPP_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) {
+async function enviarTextoWhatsApp(
+  telefone: string,
+  texto: string,
+  phoneNumberId?: string,
+) {
+  const numeroId = phoneNumberId ?? env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!env.WHATSAPP_TOKEN || !numeroId) {
     throw new Error('Configuração do WhatsApp não encontrada.');
   }
-  const url = `https://graph.facebook.com/v20.0/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  console.log('[GLUCO:WHATSAPP]', {
+    acao: 'enviar_texto',
+    telefone,
+    tamanho: texto.length,
+    phoneNumberId: numeroId,
+  });
+  const url = `https://graph.facebook.com/v20.0/${numeroId}/messages`;
   for (let tentativa = 1; tentativa <= 3; tentativa += 1) {
     try {
       const resposta = await fetch(url, {
@@ -187,10 +548,23 @@ async function enviarTextoWhatsApp(telefone: string, texto: string) {
       });
       if (!resposta.ok) {
         const erroTexto = await resposta.text();
+        console.log('[GLUCO:WHATSAPP]', {
+          acao: 'erro_enviar_texto',
+          telefone,
+          status: resposta.status,
+          erro: erroTexto,
+        });
         throw new Error(erroTexto);
       }
+      console.log('[GLUCO:WHATSAPP]', { acao: 'texto_enviado', telefone, status: resposta.status });
       return true;
     } catch (erro) {
+      console.log('[GLUCO:WHATSAPP]', {
+        acao: 'falha_enviar_texto',
+        telefone,
+        tentativa,
+        erro: (erro as Error).message,
+      });
       if (tentativa === 3) {
         throw erro;
       }
@@ -200,53 +574,6 @@ async function enviarTextoWhatsApp(telefone: string, texto: string) {
   return false;
 }
 
-async function enviarBotoesWhatsApp(
-  telefone: string,
-  texto: string,
-  botoes: { id: string; titulo: string }[],
-) {
-  if (!env.WHATSAPP_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) {
-    throw new Error('Configuração do WhatsApp não encontrada.');
-  }
-  const url = `https://graph.facebook.com/v20.0/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
-  for (let tentativa = 1; tentativa <= 3; tentativa += 1) {
-    try {
-      const resposta = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${env.WHATSAPP_TOKEN}`,
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: telefone,
-          type: 'interactive',
-          interactive: {
-            type: 'button',
-            body: { text: texto },
-            action: {
-              buttons: botoes.map((botao) => ({
-                type: 'reply',
-                reply: { id: botao.id, title: botao.titulo },
-              })),
-            },
-          },
-        }),
-      });
-      if (!resposta.ok) {
-        const erroTexto = await resposta.text();
-        throw new Error(erroTexto);
-      }
-      return true;
-    } catch (erro) {
-      if (tentativa === 3) {
-        throw erro;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 300 * tentativa));
-    }
-  }
-  return false;
-}
 
 function formatarTipoDiabetes(tipo: string) {
   if (tipo === 'TIPO_1') return 'Tipo 1';
@@ -276,6 +603,78 @@ function normalizarTexto(texto?: string) {
 
 function normalizarResposta(texto?: string) {
   return normalizarTexto(texto).toLowerCase();
+}
+
+function normalizarChave(chave: string) {
+  return chave
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function obterValorPorChaves(dados: Record<string, unknown>, chaves: string[]) {
+  const alvos = new Set(chaves.map(normalizarChave));
+  for (const [chave, valor] of Object.entries(dados)) {
+    if (alvos.has(normalizarChave(chave))) {
+      return valor;
+    }
+  }
+  return undefined;
+}
+
+function parsearBooleano(valor: unknown) {
+  if (typeof valor === 'boolean') return valor;
+  if (typeof valor === 'number') return valor === 1;
+  if (typeof valor !== 'string') return null;
+  const texto = normalizarResposta(valor);
+  if (['sim', 's', 'true', '1'].includes(texto)) return true;
+  if (['nao', 'não', 'n', 'false', '0'].includes(texto)) return false;
+  return null;
+}
+
+function parsearNumero(valor: unknown) {
+  if (typeof valor === 'number') return valor;
+  if (typeof valor !== 'string') return null;
+  return extrairNumeroDecimal(valor);
+}
+
+function parsearAnosDiagnostico(valor: unknown) {
+  if (typeof valor === 'number') return Math.round(valor);
+  if (typeof valor !== 'string') return null;
+  const numeros = valor.match(/\d+/g)?.map((item) => Number(item)) ?? [];
+  if (!numeros.length) return null;
+  return Math.max(...numeros);
+}
+
+function parsearDataNascimento(valor: unknown) {
+  if (valor instanceof Date) {
+    return Number.isNaN(valor.getTime()) ? null : valor;
+  }
+  if (typeof valor !== 'string') return null;
+  const texto = valor.trim();
+  if (!texto) return null;
+  const br = texto.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+  if (br) {
+    const dia = Number(br[1]);
+    const mes = Number(br[2]);
+    const ano = Number(br[3]);
+    const data = new Date(ano, mes - 1, dia);
+    if (!Number.isNaN(data.getTime())) return data;
+  }
+  const dataIso = new Date(texto);
+  if (!Number.isNaN(dataIso.getTime())) return dataIso;
+  return null;
+}
+
+function calcularIdade(dataNascimento: Date) {
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - dataNascimento.getFullYear();
+  const mes = hoje.getMonth() - dataNascimento.getMonth();
+  if (mes < 0 || (mes === 0 && hoje.getDate() < dataNascimento.getDate())) {
+    idade -= 1;
+  }
+  return idade;
 }
 
 function extrairNumeroDecimal(texto: string) {
@@ -308,14 +707,6 @@ function extrairPesoKg(texto: string) {
     return null;
   }
   return Math.round(valor * 10) / 10;
-}
-
-function obterOnboardingDados(paciente: { onboardingDados?: unknown }) {
-  const dados = paciente.onboardingDados;
-  if (!dados || typeof dados !== 'object') {
-    return {};
-  }
-  return dados as OnboardingDados;
 }
 
 function calcularMacrosDiarios(pesoKg: number) {
@@ -360,9 +751,14 @@ async function registrarMensagemPaciente(pacienteId: string, mensagem: MensagemE
   }
 }
 
-async function enviarTextoComRegistro(telefone: string, pacienteId: string, texto: string) {
+async function enviarTextoComRegistro(
+  telefone: string,
+  pacienteId: string,
+  texto: string,
+  phoneNumberId?: string,
+) {
   try {
-    await enviarTextoWhatsApp(telefone, texto);
+    await enviarTextoWhatsApp(telefone, texto, phoneNumberId);
     await salvarMensagem({
       pacienteId,
       conteudo: texto,
@@ -370,438 +766,253 @@ async function enviarTextoComRegistro(telefone: string, pacienteId: string, text
       tipo: 'TEXTO',
     });
   } catch {
+    console.log('[GLUCO:WHATSAPP]', {
+      acao: 'falha_salvar_texto',
+      telefone,
+      pacienteId,
+    });
     return;
   }
 }
 
-async function enviarBotoesComRegistro(
+function criarFlowToken(numero: string) {
+  const data = Date.now();
+  return `onboarding_${numero}_${data}`;
+}
+
+async function enviarFlowDireto(telefone: string, phoneNumberId?: string) {
+  const numeroId = phoneNumberId ?? env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!env.WHATSAPP_TOKEN || !numeroId || !env.FLOW_ID) {
+    throw new Error('Configuração do WhatsApp não encontrada.');
+  }
+  console.log('[GLUCO:WHATSAPP]', { acao: 'enviar_flow', telefone, flowId: env.FLOW_ID, phoneNumberId: numeroId });
+  const url = `https://graph.facebook.com/v19.0/${numeroId}/messages`;
+  const payload = {
+    messaging_product: 'whatsapp',
+    to: telefone,
+    type: 'interactive',
+    interactive: {
+      type: 'flow',
+      header: { type: 'text', text: '🧬 Gluco IA' },
+      body: {
+        text:
+          'Olá! 👋😄\n\n' +
+          'Eu sou o Gluco IA, seu novo parceiro para:\n\n' +
+          '✅ Controlar sua glicemia\n' +
+          '✅ Montar refeições anti-diabetes\n' +
+          '✅ Evitar complicações 😅\n\n' +
+          '👉 Vamos montar seu perfil? Leva menos de 1 minuto ⏱️',
+      },
+      footer: { text: 'Powered by Gluco IA 🧬' },
+      action: {
+        name: 'flow',
+        parameters: {
+          flow_message_version: '3',
+          flow_token: criarFlowToken(telefone),
+          flow_id: env.FLOW_ID,
+          flow_cta: 'Começar agora',
+          flow_action: 'navigate',
+          flow_action_payload: { screen: 'BREAK_PATTERN' },
+        },
+      },
+    },
+  };
+  for (let tentativa = 1; tentativa <= 3; tentativa += 1) {
+    try {
+      const resposta = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${env.WHATSAPP_TOKEN}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!resposta.ok) {
+        const erroTexto = await resposta.text();
+        console.log('[GLUCO:WHATSAPP]', {
+          acao: 'erro_enviar_flow',
+          telefone,
+          status: resposta.status,
+          erro: erroTexto,
+        });
+        throw new Error(erroTexto);
+      }
+      console.log('[GLUCO:WHATSAPP]', { acao: 'flow_enviado', telefone, status: resposta.status });
+      return true;
+    } catch (erro) {
+      console.log('[GLUCO:WHATSAPP]', {
+        acao: 'falha_enviar_flow',
+        telefone,
+        tentativa,
+        erro: (erro as Error).message,
+      });
+      if (tentativa === 3) {
+        throw erro;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300 * tentativa));
+    }
+  }
+  return false;
+}
+
+async function garantirPaciente(
   telefone: string,
-  pacienteId: string,
-  texto: string,
-  botoes: { id: string; titulo: string }[],
+  idNumero: string | undefined,
+  configuracao?: ConfiguracaoWhatsappMin | null,
 ) {
+  const existente = (await buscarPacientePorTelefone(telefone)) as PacienteOnboarding | null;
+  if (existente) {
+    return existente;
+  }
+  if (!idNumero) {
+    return null;
+  }
+  const config = configuracao ?? (await obterConfiguracaoWhatsapp(idNumero));
+  if (!config) {
+    return null;
+  }
   try {
-    await enviarBotoesWhatsApp(telefone, texto, botoes);
-    await salvarMensagem({
-      pacienteId,
-      conteudo: texto,
-      remetente: 'SISTEMA',
-      tipo: 'TEMPLATE',
-    });
-  } catch {
-    return;
-  }
-}
-
-async function iniciarOnboarding(telefone: string, pacienteId: string) {
-  await atualizarPacienteOnboarding(pacienteId, {
-    onboardingStatus: 'EM_ANDAMENTO',
-    onboardingEtapa: 'TERMOS',
-  });
-  const boasVindas =
-    'Bem-vindo(a) ao Gluco IA! ✨\n' +
-    'Eu vou te acompanhar de forma simples e cuidadosa pelo WhatsApp.\n' +
-    'Antes de começarmos, preciso do seu aceite dos termos de uso.';
-  await enviarBotoesComRegistro(telefone, pacienteId, boasVindas, botoesTermos);
-}
-
-async function tratarEtapaTermos(
-  telefone: string,
-  pacienteId: string,
-  texto: string,
-) {
-  const resposta = normalizarResposta(texto);
-  if (['aceitar', 'termos_aceitar', 'aceito'].includes(resposta)) {
-    await atualizarPacienteOnboarding(pacienteId, {
-      termosAceitos: true,
-      onboardingStatus: 'EM_ANDAMENTO',
-      onboardingEtapa: 'NOME',
-    });
-    await enviarTextoComRegistro(telefone, pacienteId, 'Perfeito! Qual é o seu nome completo?');
-    return;
-  }
-  if (['recusar', 'termos_recusar', 'nao'].includes(resposta)) {
-    await atualizarPacienteOnboarding(pacienteId, {
-      termosAceitos: false,
-      onboardingStatus: 'RECUSADO',
-      onboardingEtapa: 'TERMOS',
-    });
-    await enviarBotoesComRegistro(
+    const criado = await criarPacienteWhatsapp({
+      clinicaId: config.clinicaId,
       telefone,
-      pacienteId,
-      'Sem o aceite dos termos eu não consigo continuar. Se desejar, você pode aceitar agora.',
-      botoesTermos,
-    );
-    return;
-  }
-  await enviarBotoesComRegistro(
-    telefone,
-    pacienteId,
-    'Para continuar, preciso que você aceite os termos de uso.',
-    botoesTermos,
-  );
-}
-
-async function tratarEtapaNome(
-  telefone: string,
-  pacienteId: string,
-  texto: string,
-) {
-  const nome = normalizarTexto(texto);
-  if (!nome) {
-    await enviarTextoComRegistro(telefone, pacienteId, 'Qual é o seu nome completo?');
-    return;
-  }
-  await atualizarPacienteOnboarding(pacienteId, {
-    onboardingStatus: 'EM_ANDAMENTO',
-    onboardingEtapa: 'NOME_CONFIRMA',
-    onboardingDados: { nomePendente: nome },
-  });
-  await enviarBotoesComRegistro(
-    telefone,
-    pacienteId,
-    `Seu nome está correto assim: ${nome}?`,
-    botoesConfirmarNome,
-  );
-}
-
-async function tratarEtapaNomeConfirmacao(
-  telefone: string,
-  pacienteId: string,
-  texto: string,
-  dados: OnboardingDados,
-) {
-  const resposta = normalizarResposta(texto);
-  if (['nome_confirmar', 'confirmar'].includes(resposta) && dados.nomePendente) {
-    await atualizarPacienteOnboarding(pacienteId, {
-      nome: dados.nomePendente,
-      onboardingStatus: 'EM_ANDAMENTO',
-      onboardingEtapa: 'SEXO',
-      onboardingDados: {},
+      nome: 'Paciente WhatsApp',
+      tipoDiabetes: 'TIPO_2',
     });
-    await enviarBotoesComRegistro(
-      telefone,
-      pacienteId,
-      'Qual é o seu sexo?',
-      botoesSexo,
-    );
-    return;
+    console.log('[GLUCO:WHATSAPP]', { acao: 'criar_paciente', telefone, pacienteId: criado.id });
+    return criado as PacienteOnboarding;
+  } catch (erro) {
+    if (detectarConflitoPrisma(erro)) {
+      return (await buscarPacientePorTelefone(telefone)) as PacienteOnboarding | null;
+    }
+    console.log('[GLUCO:WHATSAPP]', { acao: 'erro_criar_paciente', telefone });
+    return null;
   }
-  if (['nome_editar', 'editar'].includes(resposta)) {
-    await atualizarPacienteOnboarding(pacienteId, {
-      onboardingStatus: 'EM_ANDAMENTO',
-      onboardingEtapa: 'NOME',
-    });
-    await enviarTextoComRegistro(telefone, pacienteId, 'Tudo bem, qual é o seu nome completo?');
-    return;
-  }
-  await enviarBotoesComRegistro(
-    telefone,
-    pacienteId,
-    'Você pode confirmar ou editar seu nome.',
-    botoesConfirmarNome,
-  );
 }
 
-function mapearSexo(texto: string) {
-  const resposta = normalizarResposta(texto);
-  if (['sexo_feminino', 'feminino'].includes(resposta)) return 'Feminino';
-  if (['sexo_masculino', 'masculino'].includes(resposta)) return 'Masculino';
-  if (['sexo_outro', 'outro'].includes(resposta)) return 'Outro';
-  if (['sexo_nao_informar', 'prefiro não informar', 'prefiro nao informar'].includes(resposta)) {
-    return 'Prefiro não informar';
-  }
-  return null;
-}
-
-async function tratarEtapaSexo(
-  telefone: string,
-  pacienteId: string,
-  texto: string,
-) {
-  const sexo = mapearSexo(texto);
-  if (!sexo) {
-    await enviarBotoesComRegistro(telefone, pacienteId, 'Qual é o seu sexo?', botoesSexo);
-    return;
-  }
-  await atualizarPacienteOnboarding(pacienteId, {
-    genero: sexo,
-    onboardingStatus: 'EM_ANDAMENTO',
-    onboardingEtapa: 'EMAIL',
-  });
-  await enviarTextoComRegistro(telefone, pacienteId, 'Qual é o seu e-mail?');
-}
-
-async function tratarEtapaEmail(
-  telefone: string,
-  pacienteId: string,
-  texto: string,
-) {
-  const email = normalizarTexto(texto);
-  const valido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  if (!valido) {
-    await enviarTextoComRegistro(telefone, pacienteId, 'Digite um e-mail válido, por favor.');
-    return;
-  }
-  await atualizarPacienteOnboarding(pacienteId, {
-    onboardingStatus: 'EM_ANDAMENTO',
-    onboardingEtapa: 'EMAIL_CONFIRMA',
-    onboardingDados: { emailPendente: email },
-  });
-  await enviarBotoesComRegistro(
-    telefone,
-    pacienteId,
-    `Seu e-mail está correto assim: ${email}?`,
-    botoesConfirmarEmail,
-  );
-}
-
-async function tratarEtapaEmailConfirmacao(
-  telefone: string,
-  pacienteId: string,
-  texto: string,
-  dados: OnboardingDados,
-) {
-  const resposta = normalizarResposta(texto);
-  if (['email_confirmar', 'confirmar'].includes(resposta) && dados.emailPendente) {
-    await atualizarPacienteOnboarding(pacienteId, {
-      email: dados.emailPendente,
-      onboardingStatus: 'EM_ANDAMENTO',
-      onboardingEtapa: 'IDADE',
-      onboardingDados: {},
-    });
-    await enviarTextoComRegistro(telefone, pacienteId, 'Qual é a sua idade?');
-    return;
-  }
-  if (['email_editar', 'editar'].includes(resposta)) {
-    await atualizarPacienteOnboarding(pacienteId, {
-      onboardingStatus: 'EM_ANDAMENTO',
-      onboardingEtapa: 'EMAIL',
-    });
-    await enviarTextoComRegistro(telefone, pacienteId, 'Tudo bem, qual é o seu e-mail?');
-    return;
-  }
-  await enviarBotoesComRegistro(
-    telefone,
-    pacienteId,
-    'Você pode confirmar ou editar seu e-mail.',
-    botoesConfirmarEmail,
-  );
-}
-
-async function tratarEtapaIdade(
-  telefone: string,
-  pacienteId: string,
-  texto: string,
-) {
-  const idade = extrairValorNumerico(texto ?? '');
-  if (!idade || idade < 1 || idade > 120) {
-    await enviarTextoComRegistro(telefone, pacienteId, 'Informe sua idade em anos, por favor.');
-    return;
-  }
-  await atualizarPacienteOnboarding(pacienteId, {
-    idade,
-    onboardingStatus: 'EM_ANDAMENTO',
-    onboardingEtapa: 'ALTURA',
-  });
-  await enviarTextoComRegistro(telefone, pacienteId, 'Qual é a sua altura em cm?');
-}
-
-async function tratarEtapaAltura(
-  telefone: string,
-  pacienteId: string,
-  texto: string,
-) {
-  const altura = extrairAlturaCm(texto ?? '');
-  if (!altura || altura < 80 || altura > 250) {
-    await enviarTextoComRegistro(telefone, pacienteId, 'Informe sua altura em cm, por favor.');
-    return;
-  }
-  await atualizarPacienteOnboarding(pacienteId, {
-    alturaCm: altura,
-    onboardingStatus: 'EM_ANDAMENTO',
-    onboardingEtapa: 'PESO',
-  });
-  await enviarTextoComRegistro(telefone, pacienteId, 'Qual é o seu peso em kg?');
-}
-
-async function tratarEtapaPeso(
-  telefone: string,
-  pacienteId: string,
-  texto: string,
-) {
-  const peso = extrairPesoKg(texto ?? '');
-  if (!peso || peso < 20 || peso > 300) {
-    await enviarTextoComRegistro(telefone, pacienteId, 'Informe seu peso em kg, por favor.');
-    return;
-  }
-  await atualizarPacienteOnboarding(pacienteId, {
-    pesoKg: peso,
-    onboardingStatus: 'EM_ANDAMENTO',
-    onboardingEtapa: 'ULTIMA_GLICEMIA',
-  });
-  await enviarTextoComRegistro(telefone, pacienteId, 'Qual foi sua última glicemia em mg/dL?');
-}
-
-async function tratarEtapaUltimaGlicemia(
-  telefone: string,
-  pacienteId: string,
-  texto: string,
-) {
-  const valor = extrairValorNumerico(texto ?? '');
-  if (!valor || valor < 30 || valor > 600) {
-    await enviarTextoComRegistro(
-      telefone,
-      pacienteId,
-      'Informe a glicemia em mg/dL, por favor. Exemplo: 120',
-    );
-    return;
-  }
-  await atualizarPacienteOnboarding(pacienteId, {
-    ultimaGlicemia: valor,
-    onboardingStatus: 'EM_ANDAMENTO',
-    onboardingEtapa: 'SINTOMAS',
-  });
-  await enviarBotoesComRegistro(
-    telefone,
-    pacienteId,
-    'Você tem sintomas ou complicações atualmente?',
-    botoesSintomas,
-  );
-}
-
-async function tratarEtapaSintomas(
-  telefone: string,
-  pacienteId: string,
-  texto: string,
-  ultimaGlicemia: number | null | undefined,
-  pesoKg: number | null | undefined,
-) {
-  const resposta = normalizarResposta(texto);
-  if (!['sintomas_sim', 'sim', 'sintomas_nao', 'nao', 'não'].includes(resposta)) {
-    await enviarBotoesComRegistro(
-      telefone,
-      pacienteId,
-      'Você tem sintomas ou complicações atualmente?',
-      botoesSintomas,
-    );
-    return;
-  }
-  const sintomas = ['sintomas_sim', 'sim'].includes(resposta);
-  const glicemiaBase = ultimaGlicemia ?? 0;
-  const pesoBase = pesoKg && pesoKg > 0 ? pesoKg : 70;
-  const risco = calcularEscalaRisco(glicemiaBase, sintomas);
-  const macros = calcularMacrosDiarios(pesoBase);
-  await atualizarPacienteOnboarding(pacienteId, {
-    sintomasComplicacoes: sintomas,
-    riscoEscala: risco,
-    macrosDiarios: macros,
-    onboardingStatus: 'CONCLUIDO',
-    onboardingEtapa: 'FINAL',
-    onboardingDados: {},
-  });
-  const resumo =
-    `Onboarding concluído! ✅\n` +
-    `Escala de risco: ${risco}\n` +
-    `Macros diários estimados:\n` +
-    `Proteína: ${macros.proteina}g | Carboidratos: ${macros.carboidratos}g | Gorduras: ${macros.gorduras}g`;
-  await enviarTextoComRegistro(telefone, pacienteId, resumo);
-  await enviarTextoComRegistro(telefone, pacienteId, menuMensagem);
-}
-
-async function processarOnboarding(
-  telefone: string,
-  paciente: PacienteOnboarding,
-  texto: string | undefined,
-) {
-  const etapa = paciente.onboardingEtapa ?? 'BOAS_VINDAS';
-  if (etapa === 'BOAS_VINDAS') {
-    await iniciarOnboarding(telefone, paciente.id);
-    return true;
-  }
-  if (!texto) {
-    await enviarTextoComRegistro(telefone, paciente.id, 'Envie uma resposta para continuarmos.');
-    return true;
-  }
-  const dados = obterOnboardingDados(paciente);
-  if (etapa === 'TERMOS') {
-    await tratarEtapaTermos(telefone, paciente.id, texto);
-    return true;
-  }
-  if (etapa === 'NOME') {
-    await tratarEtapaNome(telefone, paciente.id, texto);
-    return true;
-  }
-  if (etapa === 'NOME_CONFIRMA') {
-    await tratarEtapaNomeConfirmacao(telefone, paciente.id, texto, dados);
-    return true;
-  }
-  if (etapa === 'SEXO') {
-    await tratarEtapaSexo(telefone, paciente.id, texto);
-    return true;
-  }
-  if (etapa === 'EMAIL') {
-    await tratarEtapaEmail(telefone, paciente.id, texto);
-    return true;
-  }
-  if (etapa === 'EMAIL_CONFIRMA') {
-    await tratarEtapaEmailConfirmacao(telefone, paciente.id, texto, dados);
-    return true;
-  }
-  if (etapa === 'IDADE') {
-    await tratarEtapaIdade(telefone, paciente.id, texto);
-    return true;
-  }
-  if (etapa === 'ALTURA') {
-    await tratarEtapaAltura(telefone, paciente.id, texto);
-    return true;
-  }
-  if (etapa === 'PESO') {
-    await tratarEtapaPeso(telefone, paciente.id, texto);
-    return true;
-  }
-  if (etapa === 'ULTIMA_GLICEMIA') {
-    await tratarEtapaUltimaGlicemia(telefone, paciente.id, texto);
-    return true;
-  }
-  if (etapa === 'SINTOMAS') {
-    await tratarEtapaSintomas(
-      telefone,
-      paciente.id,
-      texto,
-      paciente.ultimaGlicemia,
-      paciente.pesoKg,
-    );
-    return true;
-  }
-  await iniciarOnboarding(telefone, paciente.id);
-  return true;
-}
-
-async function processarMensagem(mensagem: MensagemEntrada) {
+async function processarMensagem(mensagem: MensagemEntrada, idNumero?: string) {
   try {
     const telefone = normalizarTelefone(mensagem.telefone);
-    const paciente = (await buscarPacientePorTelefone(telefone)) as PacienteOnboarding | null;
+    console.log('[GLUCO:WHATSAPP]', { acao: 'mensagem_recebida', telefone, tipo: mensagem.tipo });
+    const configuracao = await obterConfiguracaoWhatsapp(idNumero);
+    if (idNumero && !configuracao) {
+      console.log('[GLUCO:WHATSAPP]', { acao: 'config_nao_encontrada', idNumero });
+      return;
+    }
+    const phoneNumberId = configuracao?.idNumero ?? env.WHATSAPP_PHONE_NUMBER_ID;
+    if (!phoneNumberId) {
+      console.log('[GLUCO:WHATSAPP]', { acao: 'phone_number_id_ausente', idNumero });
+      return;
+    }
+    console.log('[GLUCO:WHATSAPP]', { acao: 'config_resolvida', phoneNumberId });
+    const paciente = await garantirPaciente(telefone, idNumero, configuracao);
     if (!paciente) {
-      await enviarTextoWhatsApp(telefone, 'Não encontramos seu cadastro. Fale com sua clínica.');
+      console.log('[GLUCO:WHATSAPP]', { acao: 'paciente_nao_encontrado', telefone, idNumero });
+      await enviarTextoWhatsApp(
+        telefone,
+        'Não consegui iniciar seu cadastro no momento. Por favor, tente novamente em alguns minutos.',
+        phoneNumberId,
+      );
       return;
     }
     await registrarMensagemPaciente(paciente.id, mensagem);
+    if (mensagem.tipo === 'interactive' && mensagem.flowResponseJson) {
+      await processarRespostaFlow(
+        telefone,
+        paciente.id,
+        mensagem.flowResponseJson,
+        phoneNumberId,
+      );
+      return;
+    }
+    if (paciente.onboardingEtapa === 'TERMO_ANALISE_PENDENTE' || paciente.onboardingEtapa === 'TERMO_ANALISE_RECUSADO') {
+      const resposta = normalizarResposta(mensagem.texto);
+      if (['termo_concordar', 'concordar', 'concordar termos', 'termo_concordar_retorno'].includes(resposta)) {
+        const dadosExistentes =
+          paciente.onboardingDados && typeof paciente.onboardingDados === 'object'
+            ? (paciente.onboardingDados as Record<string, unknown>)
+            : null;
+        const analiseEnviada = dadosExistentes?._analisePosFlowEnviada === true;
+        await atualizarPacienteOnboarding(paciente.id, {
+          termosAceitos: true,
+          onboardingStatus: 'CONCLUIDO',
+          onboardingEtapa: 'FLOW_CONCLUIDO',
+          onboardingDados: {
+            ...(dadosExistentes ?? {}),
+            _analisePosFlowEnviada: true,
+          } as Prisma.InputJsonValue,
+        });
+        if (!analiseEnviada) {
+          await enviarAnalisePosFlow(telefone, paciente, phoneNumberId);
+        }
+        return;
+      }
+      if (['termo_discordar', 'discordar'].includes(resposta)) {
+        await atualizarPacienteOnboarding(paciente.id, {
+          termosAceitos: false,
+          onboardingStatus: 'EM_ANDAMENTO',
+          onboardingEtapa: 'TERMO_ANALISE_RECUSADO',
+        });
+        const mensagemRecusa =
+          'Sem o aceite dos termos eu não consigo continuar.\n\n' +
+          'Se desejar, você pode concordar agora ou solicitar a exclusão do cadastro.';
+        await enviarBotoesComRegistro(
+          telefone,
+          paciente.id,
+          mensagemRecusa,
+          botoesRecuperacaoTermos,
+          phoneNumberId,
+        );
+        return;
+      }
+      if (['termo_excluir_cadastro', 'excluir cadastro'].includes(resposta)) {
+        await desativarPacienteWhatsapp(paciente.id);
+        await enviarTextoComRegistro(
+          telefone,
+          paciente.id,
+          'Cadastro excluído conforme solicitado. Se quiser voltar, é só mandar uma mensagem.',
+          phoneNumberId,
+        );
+        return;
+      }
+      await enviarBotoesComRegistro(
+        telefone,
+        paciente.id,
+        'Para continuar, preciso do seu aceite dos termos.',
+        botoesTermosAnalise,
+        phoneNumberId,
+      );
+      return;
+    }
     const precisaOnboarding = paciente.onboardingStatus !== 'CONCLUIDO';
     if (precisaOnboarding) {
-      const handled = await processarOnboarding(telefone, paciente, mensagem.texto);
-      if (handled) {
+      const texto = normalizarResposta(mensagem.texto);
+      const deveDispararFlow = texto && gatilhosFlow.some((gatilho) => texto.includes(gatilho));
+      if (mensagem.tipo === 'text' && deveDispararFlow) {
+        await enviarFlowDireto(telefone, phoneNumberId);
+        await atualizarPacienteOnboarding(paciente.id, {
+          onboardingStatus: 'EM_ANDAMENTO',
+          onboardingEtapa: 'FLOW_ENVIADO',
+        });
+        return;
+      }
+      if (mensagem.tipo === 'text') {
+        await enviarTextoComRegistro(
+          telefone,
+          paciente.id,
+          'Para iniciar o cadastro, digite "oi" ou "cadastrar".',
+          phoneNumberId,
+        );
         return;
       }
     }
     const rota = rotearMensagem(mensagem.texto, mensagem.tipo);
     if (rota === 'MENU') {
-      await enviarTextoComRegistro(telefone, paciente.id, menuMensagem);
+      await enviarTextoComRegistro(telefone, paciente.id, menuMensagem, phoneNumberId);
       return;
     }
     if (rota === 'HISTORICO') {
       const historico = await montarHistoricoMensagem(paciente.id);
-      await enviarTextoComRegistro(telefone, paciente.id, historico);
+      await enviarTextoComRegistro(telefone, paciente.id, historico, phoneNumberId);
       return;
     }
     if (rota === 'PERFIL') {
@@ -810,7 +1021,7 @@ async function processarMensagem(mensagem: MensagemEntrada) {
       const perfil = `Seu perfil:\n${paciente.nome}\nTipo: ${formatarTipoDiabetes(
         paciente.tipoDiabetes,
       )}\nMeta: ${metaMin}-${metaMax} mg/dL`;
-      await enviarTextoComRegistro(telefone, paciente.id, perfil);
+      await enviarTextoComRegistro(telefone, paciente.id, perfil, phoneNumberId);
       return;
     }
     if (rota === 'LEITURA_GLICEMIA' && mensagem.texto) {
@@ -820,6 +1031,7 @@ async function processarMensagem(mensagem: MensagemEntrada) {
           telefone,
           paciente.id,
           'Não consegui entender o valor da glicemia. Tente enviar apenas o número.',
+          phoneNumberId,
         );
         return;
       }
@@ -827,16 +1039,16 @@ async function processarMensagem(mensagem: MensagemEntrada) {
       const resposta =
         `Glicemia de ${Math.round(valor)} mg/dL registrada! 📊\n` +
         'Analisando e em breve envio sua orientação... 🧠';
-      await enviarTextoComRegistro(telefone, paciente.id, resposta);
+      await enviarTextoComRegistro(telefone, paciente.id, resposta, phoneNumberId);
       return;
     }
     if (rota === 'FOTO_REFEICAO') {
       const resposta = 'Foto recebida! 🍽️ Vou analisar e já te retorno com a orientação.';
-      await enviarTextoComRegistro(telefone, paciente.id, resposta);
+      await enviarTextoComRegistro(telefone, paciente.id, resposta, phoneNumberId);
       return;
     }
     const fallback = 'Não entendi sua mensagem. Digite "menu" para ver as opções disponíveis.';
-    await enviarTextoComRegistro(telefone, paciente.id, fallback);
+    await enviarTextoComRegistro(telefone, paciente.id, fallback, phoneNumberId);
   } catch {
     return;
   }
@@ -879,8 +1091,13 @@ async function obterConfiguracaoWhatsappPorNumeroService(idNumero: string) {
   return buscarConfiguracaoWhatsappPorIdNumero(idNumero);
 }
 
+async function excluirConfiguracaoWhatsappService(clinicaId: string, id: string) {
+  return excluirConfiguracaoWhatsapp(clinicaId, id);
+}
+
 async function processarWebhook(payload: WebhookPayload) {
   const mensagens = extrairMensagens(payload);
+  console.log('[GLUCO:WHATSAPP]', { acao: 'webhook_recebido', mensagens: mensagens.length });
   for (const mensagem of mensagens) {
     try {
       await processarMensagem(mensagem);
@@ -890,11 +1107,25 @@ async function processarWebhook(payload: WebhookPayload) {
   }
 }
 
+async function processarWebhookComNumero(payload: WebhookPayload, idNumero?: string) {
+  const mensagens = extrairMensagens(payload);
+  console.log('[GLUCO:WHATSAPP]', { acao: 'webhook_recebido', mensagens: mensagens.length, idNumero });
+  for (const mensagem of mensagens) {
+    try {
+      await processarMensagem(mensagem, idNumero);
+    } catch {
+      continue;
+    }
+  }
+}
+
 export {
   processarWebhook,
+  processarWebhookComNumero,
   verificarAssinatura,
   enviarTextoWhatsApp,
   criarConfiguracaoWhatsappService,
   obterConfiguracaoWhatsappService,
   obterConfiguracaoWhatsappPorNumeroService,
+  excluirConfiguracaoWhatsappService,
 };
