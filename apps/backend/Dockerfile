@@ -11,6 +11,8 @@ RUN GIT_REPO_CLEAN=$(echo "$GIT_REPO" | tr -d '\`') \
   && if [ -n "$GIT_TOKEN" ]; then REPO_NO_PROTO=$(echo "$GIT_REPO_CLEAN" | sed -e 's#https://##' -e 's#http://##'); git clone --depth 1 --branch ${GIT_REF} https://${GIT_TOKEN}@${REPO_NO_PROTO} /repo; else git clone --depth 1 --branch ${GIT_REF} ${GIT_REPO_CLEAN} /repo; fi
 
 FROM base AS builder
+ARG URL_BANCO
+ENV URL_BANCO=${URL_BANCO}
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @gluco/backend generate
 RUN pnpm --filter @gluco/backend build

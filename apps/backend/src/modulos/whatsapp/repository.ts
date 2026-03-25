@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, Paciente } from '@prisma/client';
 import { prisma } from '../../infra/prisma.js';
 
 const prismaExtendido = prisma as typeof prisma & {
@@ -129,7 +129,7 @@ async function excluirConfiguracaoWhatsapp(clinicaId: string, id: string) {
 async function buscarPacientePorId(pacienteId: string) {
   return prisma.paciente.findUnique({
     where: { id: pacienteId },
-  }) as Promise<{ onboardingDados?: unknown } | null>;
+  }) as Promise<Paciente | null>;
 }
 
 async function desativarPacienteWhatsapp(pacienteId: string) {
@@ -160,6 +160,9 @@ async function atualizarPacienteOnboarding(
     macrosDiarios?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
     pais?: string | null;
     anosdiagnostico?: number | null;
+    waitlistGestacional?: boolean;
+    medicamentos?: string | null;
+    semGlicosimetro?: boolean;
   },
 ) {
   return prisma.paciente.update({

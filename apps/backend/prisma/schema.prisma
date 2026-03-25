@@ -56,6 +56,8 @@ model Paciente {
   medicamentos      String?
   metaGlicemicaMin  Int?
   metaGlicemicaMax  Int?
+  waitlistGestacional Boolean   @default(false)
+  semGlicosimetro   Boolean   @default(false)
   ativo             Boolean    @default(true)
   criadoEm          DateTime   @default(now())
   clinica           Clinica    @relation(fields: [clinicaId], references: [id])

@@ -381,6 +381,10 @@ FASE 5A  ·  ONBOARDING WHATSAPP
 🟢  🧬  Onboarding via Flow do WhatsApp
 🟢  📜  Termos pré-análise com botões e recuperação
 🟢  🗂️  Mapeamento de email, país e data de nascimento no Flow
+🟢  🧭  Onboarding em duas etapas (Flow 01 + Flow 02)
+🟢  🌸  Tratativa de diabetes gestacional com waitlist
+🟢  🔁  Onboarding em três etapas (Flow 01 + Flow 02 + Flow 03)
+🟢  🧪  Tratativa de ausência de glicosímetro com flag e continuação do cadastro
 
 🤖  PROMPT IDE — FASE 5A — ONBOARDING WHATSAPP
 BACKEND (src/modulos/whatsapp):

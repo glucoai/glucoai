@@ -19,6 +19,15 @@ const optionalString = z.preprocess(
   z.string().min(1).optional(),
 );
 
+const optionalBoolean = z.preprocess((valor) => {
+  if (typeof valor === 'boolean') return valor;
+  if (typeof valor !== 'string') return undefined;
+  const limpo = valor.trim().toLowerCase();
+  if (['true', '1', 'yes', 'y', 'sim'].includes(limpo)) return true;
+  if (['false', '0', 'no', 'n', 'nao', 'não'].includes(limpo)) return false;
+  return undefined;
+}, z.boolean().optional());
+
 const schema = z.object({
   PORT: z.coerce.number().int().positive().optional(),
   SENTRY_DSN: optionalString,
@@ -43,6 +52,11 @@ const schema = z.object({
   WHATSAPP_APP_SECRET: optionalString,
   WHATSAPP_PHONE_NUMBER_ID: optionalString,
   FLOW_ID: optionalString,
+  FLOW01_ID: optionalString,
+  FLOW02_ID: optionalString,
+  FLOW03_ID: optionalString,
+  FLOWTESTE_ID: optionalString,
+  TESTEFLOW: optionalBoolean,
 });
 
 const env = schema.parse({
@@ -69,6 +83,11 @@ const env = schema.parse({
   WHATSAPP_APP_SECRET: process.env.WHATSAPP_APP_SECRET,
   WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
   FLOW_ID: process.env.FLOW_ID,
+  FLOW01_ID: process.env.FLOW01_ID,
+  FLOW02_ID: process.env.FLOW02_ID,
+  FLOW03_ID: process.env.FLOW03_ID,
+  FLOWTESTE_ID: process.env.FLOWTESTE_ID,
+  TESTEFLOW: process.env.TESTEFLOW,
 });
 
 export { env };
