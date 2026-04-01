@@ -7,6 +7,7 @@ import { pacientesRoutes } from './modulos/pacientes/routes.js';
 import { glicemiasRoutes } from './modulos/glicemias/routes.js';
 import { painelRoutes } from './modulos/painel/routes.js';
 import { whatsappRoutes } from './modulos/whatsapp/routes.js';
+import { financeiroRoutes } from './modulos/financeiro/routes.js';
 import { authPlugin } from './plugins/auth.js';
 import { Sentry, enabled as sentryEnabled } from './infra/sentry.js';
 
@@ -35,6 +36,7 @@ async function buildApp() {
   app.register(glicemiasRoutes);
   app.register(painelRoutes);
   app.register(whatsappRoutes);
+  app.register(financeiroRoutes);
   authPlugin(app);
 
   app.get('/saude', async () => {

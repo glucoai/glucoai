@@ -26,9 +26,22 @@ function obterValoresSparkline(paciente: PacienteItem) {
   return valores?.length ? valores : [110, 120, 115, 130, 118, 125, 112];
 }
 
+function formatarNivelScore(nivel?: string | null) {
+  if (!nivel) return '';
+  if (nivel === 'BAIXO') return 'Baixo';
+  if (nivel === 'MODERADO') return 'Moderado';
+  if (nivel === 'ALTO') return 'Alto';
+  if (nivel === 'CRITICO') return 'Crítico';
+  return nivel;
+}
+
 function LinhaPaciente({ paciente }: { paciente: PacienteItem }) {
   const ultima = paciente.glicemias?.[0];
   const valores = obterValoresSparkline(paciente);
+  const scoreTexto =
+    paciente.scoreTotal != null && paciente.scoreNivel
+      ? `${paciente.scoreTotal} · ${formatarNivelScore(paciente.scoreNivel)}`
+      : '-';
   return (
     <tr className="text-texto">
       <td className="py-4 flex items-center gap-3">
@@ -54,6 +67,7 @@ function LinhaPaciente({ paciente }: { paciente: PacienteItem }) {
           '-'
         )}
       </td>
+      <td className="py-4">{scoreTexto}</td>
       <td className="py-4">
         <SparklineMini valores={valores} />
       </td>
@@ -72,6 +86,7 @@ export function PacientesTable({ pacientes }: Props) {
             <th className="py-3">Tipo</th>
             <th className="py-3">Glicemia</th>
             <th className="py-3">Status</th>
+            <th className="py-3">Escore</th>
             <th className="py-3">Tendência</th>
           </tr>
         </thead>

@@ -2,49 +2,6 @@
   "version": "7.3",
   "screens": [
     {
-      "id": "BREAK_PATTERN",
-      "title": "Uma pergunta rápida 😄",
-      "data": {},
-      "layout": {
-        "type": "SingleColumnLayout",
-        "children": [
-          { "type": "TextHeading", "text": "Antes da gente começar…" },
-          {
-            "type": "TextBody",
-            "text": "Deixa eu te perguntar uma coisa 😄\n(Sem julgamentos… estamos juntos nisso 🤝)"
-          },
-          { "type": "TextBody", "text": "👉 Você é do tipo que:" },
-          {
-            "type": "Form",
-            "name": "form_break_pattern",
-            "children": [
-              {
-                "type": "RadioButtonsGroup",
-                "label": "Escolha uma opção:",
-                "name": "controle_glicemia",
-                "required": true,
-                "data-source": [
-                  { "id": "controlado", "title": "1️⃣ Controla direitinho" },
-                  { "id": "descuidado", "title": "2️⃣ Lembra quando dá problema" }
-                ]
-              },
-              {
-                "type": "Footer",
-                "label": "Continuar",
-                "on-click-action": {
-                  "name": "navigate",
-                  "next": { "type": "screen", "name": "MISSION_START" },
-                  "payload": {
-                    "controle_glicemia": "${form.controle_glicemia}"
-                  }
-                }
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
       "id": "MISSION_START",
       "title": "Missão Iniciada 🎮",
       "data": {

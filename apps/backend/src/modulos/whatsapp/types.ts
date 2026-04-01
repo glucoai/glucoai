@@ -4,7 +4,7 @@ type WebhookMensagem = {
   timestamp?: string;
   type?: string;
   text?: { body?: string };
-  image?: { id?: string };
+  image?: { id?: string; caption?: string };
   interactive?: {
     type?: string;
     button_reply?: { id?: string; title?: string };
@@ -42,6 +42,7 @@ type RotaMensagem =
   | 'FOTO_REFEICAO'
   | 'MENU'
   | 'HISTORICO'
+  | 'ESCORE'
   | 'PERFIL'
   | 'DESCONHECIDO';
 

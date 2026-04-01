@@ -4,14 +4,14 @@ IA
 
 
 ROADMAP DETALHADO v2
-13 Fases · Mobile-first + Dashboard Clínico · Prompts para IDE · PT-BR
+14 Fases · Mobile-first + Dashboard Clínico · Prompts para IDE · PT-BR
 
 Campo
 Detalhe
 Projeto
 Gluco IA — AI Metabolic Assistant
 Fases
-13 Fases de Desenvolvimento
+14 Fases de Desenvolvimento
 Estimativa
 18 a 26 semanas (equipe 2-3 devs)
 Metodologia
@@ -24,7 +24,7 @@ Formato
 Prompt-first: cada fase com instrução para IDE
 
 
-VISÃO GERAL — 13 FASES
+VISÃO GERAL — 14 FASES
 Cada fase termina com entregável funcional e testável. Não avance sem o critério de aceite cumprido.
 
 Fase
@@ -55,10 +55,18 @@ F5A
 Sem 10-11
 Onboarding WhatsApp
 Mensagem imersiva; termos aceitos; dados coletados; risco e macros calculados
+F5B
+Sem 11-12
+Escore de Risco Metabólico
+Score calculado no Flow; mensagem PT-BR; escore exibido em pacientes
 F6
 Sem 10-13
 IA (GPT-4o + Vision API)
 Análise glicemia + refeição; resposta PT-BR em < 30s
+F6A
+Sem 13-14
+IA no WhatsApp (produção)
+Foto e glicemia analisadas via worker + retorno no WhatsApp
 F7
 Sem 13-15
 Financeiro (Stripe)
@@ -402,6 +410,48 @@ WHATSAPP — Conversas:
   - Repetição de etapa em caso de edição ou validação falha
 
 
+FASE 5B  ·  ESCORE DE RISCO METABÓLICO
+⏱  1 semana
+🟢 Concluído
+
+📋 Tarefas
+🟢  🧮  Implementar algoritmo de pontuação do escore metabólico
+🟢  💾  Persistir último escore no paciente (nível, mensagem e frequência)
+🟢  💬  Mensagem automática pós-flow com orientação por escore
+🟢  📈  Consulta de escore via WhatsApp (menu/histórico)
+🟢  🖥️  Exibir último escore na tela Pacientes
+
+🤖  PROMPT IDE — FASE 5B — ESCORE METABÓLICO
+BACKEND (src/modulos/whatsapp + prisma):
+  - Calcular score após Flow 03 com regras fixas
+  - Salvar scoreTotal, scoreNivel, scoreMensagem, scoreFrequencia
+  - Responder "escore" e incluir no "histórico"
+
+FRONTEND — Tela Pacientes:
+  - Coluna "Escore" com total e nível
+  - Exibir apenas o último escore calculado
+
+
+FASE 5C  ·  REFATORAÇÃO WHATSAPP (MODULARIZAÇÃO)
+⏱  1 semana
+🟢 Concluído
+
+📋 Tarefas
+🟢  🧱  Extrair catálogo de mensagens para módulo dedicado
+🟢  🧩  Isolar parsing/normalização e utilitários de flow
+�  🧭  Separar roteamento de mensagens e gatilhos
+🟢  🔌  Extrair cliente WhatsApp (texto, botões, flow) com retry
+🟢  🧠  Modularizar handlers de flow (flow01/02/03) mantendo ordem
+🟢  🧾  Reduzir service.ts para fachada de orquestração
+
+🤖  PROMPT IDE — FASE 5C — REFATORAÇÃO WHATSAPP
+BACKEND (src/modulos/whatsapp):
+  - Refatoração somente estrutural, sem alterar regras, textos ou ordem dos fluxos
+  - Manter gatilhos, mensagens e logs exatamente iguais
+  - Centralizar mensagens em catálogo e separar handlers por flow
+  - Garantir que service.ts fique <= 200 linhas e funções <= 40 linhas
+
+
 FASE 6  ·  IA — GPT-5.1 + VISION API
 ⏱  3 semanas
 🟢 Concluído
@@ -454,33 +504,60 @@ FRONTEND — CardAnaliseIA (mobile, tela refeições):
   BadgeIndiceGlicemico: Baixo/Médio/Alto
 
 
-FASE 7  ·  FINANCEIRO — STRIPE (standby não inciar sem autorização, tomando decisaão sobre outro gateway)
-⏱  2 semanas
-🟡 Em andamento (standby não inciar sem autorização, tomando decisaão sobre outro gateway)
+FASE 6A  ·  IA NO WHATSAPP (PRODUÇÃO)
+⏱  1 semana
+🟢 Concluído
 
 
 📋 Tarefas
-🔴  💳  Criar produtos e preços no Stripe
-🔴  🔗  POST /financeiro/checkout → Stripe Session
-🔴  📩  Webhook Stripe com validação de assinatura
+🟢  🔌  Integrar envio de mídia (foto) no WhatsApp com fila de análise
+🟢  📊  Integrar leitura de glicemia no WhatsApp com análise assíncrona
+🟢  🧩  Modularizar service do WhatsApp (handlers por tipo de mensagem)
+🟢  🧪  Logs e métricas de falha para análise de mídia
+🟢  🔁  Retry controlado para falhas de download de mídia
+
+🤖  PROMPT IDE — FASE 6A — IA NO WHATSAPP (PRODUÇÃO)
+BACKEND (src/modulos/whatsapp):
+  - Separar handlers: texto, imagem, documento
+  - Handler imagem: baixar mídia, enviar para worker, responder ao paciente
+  - Handler glicemia: registrar, acionar worker de análise, responder status
+  - Nunca processar IA no request principal; usar worker assíncrono
+  - Salvar eventos e erros na tabela mensagens para auditoria
+
+
+FASE 7  ·  FINANCEIRO — ASAAS (cartão) + WOOVI (Pix Automático)
+⏱  2 semanas
+🟡 Em andamento
+
+
+📋 Tarefas
+🔴  💳  Criar cobrança no Asaas (cartão de crédito)
+🔴  🔗  POST /financeiro/checkout/cartao → Asaas cobrança
+🔴  📩  Webhook Asaas com validação de assinatura
+🟢  🔁  POST /financeiro/checkout/pix-automatico → Woovi assinatura
+🟡  🔔  Webhooks Woovi: PIX_AUTOMATIC_APPROVED e PIX_AUTOMATIC_COBR_COMPLETED (recebimento OK, regras de negócio pendentes)
 🔴  📊  Controle de acesso por plano de assinatura
 🔴  🧾  Plano gratuito vs pago + bloqueio de features
 🔴  💰  Tela Financeiro com histórico de pagamentos
 🔴  ⚠️  E-mail automático de inadimplência
 
-🤖  PROMPT IDE — FASE 7 — STRIPE + ASSINATURAS
+🤖  PROMPT IDE — FASE 7 — ASAAS (CARTÃO) + WOOVI (PIX AUTOMÁTICO)
 BACKEND (src/modulos/financeiro):
-  POST /financeiro/checkout → Stripe Checkout Session
-  POST /financeiro/webhook  → valida + processa eventos:
-    invoice.payment_succeeded → Assinatura ATIVA + Pagamento PAGO
-    invoice.payment_failed    → Assinatura INADIMPLENTE + e-mail
-    customer.subscription.deleted → Assinatura CANCELADA + downgrade
+  POST /financeiro/checkout/cartao → cria cobrança no Asaas
+  POST /financeiro/checkout/pix-automatico → cria assinatura Woovi (Pix Automático)
+  POST /financeiro/webhook/asaas → valida + processa eventos:
+    pagamento_confirmado → Assinatura ATIVA + Pagamento PAGO
+    pagamento_falhou     → Assinatura INADIMPLENTE + e-mail
+    assinatura_cancelada → Assinatura CANCELADA + downgrade
+  POST /financeiro/webhook/woovi → valida + processa eventos:
+    PIX_AUTOMATIC_APPROVED → Assinatura ATIVA
+    PIX_AUTOMATIC_COBR_COMPLETED → Pagamento PAGO
   GET  /financeiro/assinatura  → status atual
   GET  /financeiro/pagamentos  → histórico paginado
   POST /financeiro/cancelar    → cancelarNoFim = true
-  POST /financeiro/portal      → Stripe Customer Portal
+  POST /financeiro/portal      → Portal Asaas (ou link de gestão)
 
-Planos sugeridos (criar no Stripe):
+Planos sugeridos (criar no Asaas/Woovi):
   Inicial:      Até 50 pacientes — R$ 297/mês
   Profissional: Até 200 pacientes — R$ 697/mês
   Clínica:      Até 1000 pacientes — R$ 1.497/mês
@@ -492,6 +569,70 @@ FRONTEND (src/paginas/Financeiro):
   Botão 'Gerenciar Plano' → Stripe Customer Portal
   BannerAlerta vermelho se inadimplente ou cancelado
   Todos os textos de planos e status em Português BR
+
+
+FASE 7B  ·  BILLING B2C — PLANOS, TRIAL R$1 (7 DIAS) E ENTITLEMENTS
+⏱  2 semanas
+🔴 Não iniciado
+
+
+✅ DECISÕES FECHADAS (B2C)
+- Jornada Woovi padrão: PAYMENT_ON_APPROVAL
+- Trial: 7 dias por R$1
+- Bloqueio: total ao fim do trial ou em inadimplência
+- Limites por feature: padrão ilimitado (configurável para ativar limites depois)
+- Planos ativos para pacientes: GLUCO_CONTROL, GLUCO_REVERSAL, GLUCO_CLINICAL_PRO
+
+
+📋 Tarefas
+🔴  🧭  Definir catálogo B2C oficial no backend: GLUCO_CONTROL, GLUCO_REVERSAL, GLUCO_CLINICAL_PRO
+🔴  🧩  Manter estruturas B2B existentes sem remoção (compatibilidade), mas operar fluxo padrão em B2C
+🔴  💡  Implementar trial de 7 dias por R$1 com estados explícitos (TRIAL_ATIVO, ATIVA, INADIMPLENTE, CANCELADA)
+🔴  🔁  Implementar troca de ciclo pós-trial (encerrar fluxo R$1 e criar assinatura mensal do plano contratado)
+🔴  💳  Persistir transações financeiras por evento (APROVADO, PAGO, FALHA, CANCELADO) com idempotência
+🔴  🔔  Processar webhooks Woovi com regra de negócio:
+      PIX_AUTOMATIC_APPROVED → ativar assinatura/trial
+      PIX_AUTOMATIC_COBR_COMPLETED → marcar pagamento PAGO
+🔴  🛡️  Criar serviço de entitlements por plano (liberação de features e limites configuráveis)
+🔴  🚦  Aplicar bloqueio/liberação no backend para recursos premium por plano
+🔴  ⏳  Criar job de expiração de trial (7 dias) + transição automática para cobrança recorrente do plano
+🔴  ⚠️  Alertas de ciclo financeiro (D-1 fim do trial, falha de cobrança, risco de bloqueio)
+🔴  📚  Criar endpoints de assinatura B2C:
+      GET /financeiro/assinatura-b2c
+      GET /financeiro/entitlements
+      GET /financeiro/pagamentos-b2c
+🔴  💎  Finalizar UX Premium da tela Financeiro:
+      card de assinatura ativa/trial
+      CTA de aprovação Pix Automático
+      estado de cópia EMV + redirecionamento para paymentLinkUrl
+      histórico de pagamentos com status
+
+🤖  PROMPT IDE — FASE 7B — BILLING B2C (TRIAL + ENTITLEMENTS)
+BACKEND (src/modulos/financeiro):
+  - Persistir assinatura B2C vinculada à clínica mestre atual
+  - Tratar webhook Woovi com idempotência por correlationID/globalID
+  - Tratar trial como fluxo separado para permitir valor promocional (R$1) e migração para mensalidade
+  - Implementar regras:
+    trial_r1_aprovado        → TRIAL_ATIVO + trialFinalEm = now + 7 dias
+    recorrencia_aprovada     → ATIVA
+    cobranca_concluida       → Pagamento PAGO + atualizar fimPeriodoAtual
+    cobranca_falhou          → INADIMPLENTE
+    recorrencia_cancelada    → CANCELADA
+  - Expor endpoint de entitlements para o frontend
+
+PLANOS B2C (base: .docs/planos-e-features.md):
+  GLUCO_CONTROL:
+    preço R$ 49,90/mês | trial R$ 1 por 7 dias
+  GLUCO_REVERSAL:
+    preço R$ 69,90/mês | trial R$ 1 por 7 dias
+  GLUCO_CLINICAL_PRO:
+    preço R$ 97,90/mês | trial R$ 1 por 7 dias
+
+FRONTEND (src/pages/FinanceiroPage.tsx + features/financeiro):
+  - Exibir plano atual, status e dias restantes de trial
+  - Exibir botões: "Aprovar no banco", "Copiar código Pix", "Ver histórico"
+  - Exibir mensagens de bloqueio total quando trial/assinatura estiver inativa
+  - Textos 100% PT-BR com linguagem simples para usuário final
 
 
 FASE 8  ·  MENSAGENS + HEATMAP + RELATÓRIOS

@@ -57,6 +57,8 @@ const schema = z.object({
   FLOW03_ID: optionalString,
   FLOWTESTE_ID: optionalString,
   TESTEFLOW: optionalBoolean,
+  WOOVI_API_URL: optionalString,
+  WOOVI_API_KEY: optionalString,
 });
 
 const env = schema.parse({
@@ -88,6 +90,8 @@ const env = schema.parse({
   FLOW03_ID: process.env.FLOW03_ID,
   FLOWTESTE_ID: process.env.FLOWTESTE_ID,
   TESTEFLOW: process.env.TESTEFLOW,
+  WOOVI_API_URL: process.env.WOOVI_API_URL,
+  WOOVI_API_KEY: process.env.WOOVI_API_KEY,
 });
 
 export { env };

@@ -1,12 +1,15 @@
-import { Card } from '@gluco/ui';
+import { CheckoutPixAutomaticoCard } from '../features/financeiro/components/CheckoutPixAutomaticoCard';
 
 export function FinanceiroPage() {
   return (
-    <Card className="border border-borda bg-fundo/90 backdrop-blur-md">
-      <div className="text-xl font-display font-semibold text-texto">Financeiro</div>
-      <div className="text-sm text-texto mt-2">
-        Painel financeiro será habilitado na próxima etapa.
+    <div className="flex flex-col gap-6">
+      <div>
+        <div className="text-2xl font-display font-semibold text-texto">Financeiro</div>
+        <div className="text-sm text-texto/80 mt-2">
+          Integração financeira em andamento. Use o formulário abaixo para testar a criação do Pix Automático.
+        </div>
       </div>
-    </Card>
+      <CheckoutPixAutomaticoCard />
+    </div>
   );
 }

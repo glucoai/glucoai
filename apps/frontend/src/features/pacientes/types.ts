@@ -12,6 +12,9 @@ type PacienteItem = {
   tipoDiabetes: TipoDiabetes;
   metaGlicemicaMin?: number | null;
   metaGlicemicaMax?: number | null;
+  scoreTotal?: number | null;
+  scoreNivel?: string | null;
+  scoreAtualizadoEm?: string | null;
   glicemias?: GlicemiaRegistro[];
 };
 

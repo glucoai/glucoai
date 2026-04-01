@@ -18,6 +18,28 @@ async function listarPacientes(clinicaId: string, filtros: PacienteQuery) {
       : {}),
   };
 
+  const selectPacientes = {
+    id: true,
+    nome: true,
+    telefone: true,
+    tipoDiabetes: true,
+    ativo: true,
+    criadoEm: true,
+    metaGlicemicaMin: true,
+    metaGlicemicaMax: true,
+    scoreTotal: true,
+    scoreNivel: true,
+    scoreAtualizadoEm: true,
+    glicemias: {
+      orderBy: { registradoEm: 'desc' },
+      take: 7,
+      select: {
+        valor: true,
+        registradoEm: true,
+      },
+    },
+  } as unknown as Prisma.PacienteSelect;
+
   const [total, dados] = await Promise.all([
     prisma.paciente.count({ where }),
     prisma.paciente.findMany({
@@ -25,24 +47,7 @@ async function listarPacientes(clinicaId: string, filtros: PacienteQuery) {
       orderBy: { criadoEm: 'desc' },
       skip: (pagina - 1) * limite,
       take: limite,
-      select: {
-        id: true,
-        nome: true,
-        telefone: true,
-        tipoDiabetes: true,
-        ativo: true,
-        criadoEm: true,
-        metaGlicemicaMin: true,
-        metaGlicemicaMax: true,
-        glicemias: {
-          orderBy: { registradoEm: 'desc' },
-          take: 7,
-          select: {
-            valor: true,
-            registradoEm: true,
-          },
-        },
-      },
+      select: selectPacientes,
     }),
   ]);
 

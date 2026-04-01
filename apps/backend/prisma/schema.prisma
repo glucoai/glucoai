@@ -48,6 +48,11 @@ model Paciente {
   onboardingEtapa   String?
   onboardingDados   Json?
   riscoEscala       String?
+  scoreTotal        Int?
+  scoreNivel        String?
+  scoreMensagem     String?
+  scoreFrequencia   String?
+  scoreAtualizadoEm DateTime?
   macrosDiarios     Json?
   cidade            String?
   pais              String?

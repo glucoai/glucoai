@@ -94,6 +94,16 @@ async function criarGlicemia(pacienteId: string, valor: number) {
   });
 }
 
+async function criarRefeicao(pacienteId: string, urlImagem: string) {
+  return prisma.refeicao.create({
+    data: {
+      pacienteId,
+      urlImagem,
+      origem: 'WHATSAPP',
+    },
+  });
+}
+
 async function buscarUltimasGlicemias(pacienteId: string, limite: number) {
   return prisma.glicemia.findMany({
     where: { pacienteId },
@@ -157,6 +167,11 @@ async function atualizarPacienteOnboarding(
     onboardingEtapa?: string | null;
     onboardingDados?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
     riscoEscala?: string | null;
+    scoreTotal?: number | null;
+    scoreNivel?: string | null;
+    scoreMensagem?: string | null;
+    scoreFrequencia?: string | null;
+    scoreAtualizadoEm?: Date | null;
     macrosDiarios?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
     pais?: string | null;
     anosdiagnostico?: number | null;
@@ -188,6 +203,7 @@ export {
   desativarPacienteWhatsapp,
   salvarMensagem,
   criarGlicemia,
+  criarRefeicao,
   buscarUltimasGlicemias,
   criarConfiguracaoWhatsapp,
   buscarConfiguracaoWhatsappPorClinica,

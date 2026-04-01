@@ -2,6 +2,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 import Redis from 'ioredis';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 type Env = {
   URL_BANCO: string;
@@ -13,7 +14,17 @@ type Env = {
 };
 
 const env = carregarEnv();
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: env.URL_BANCO });
+const prisma = new PrismaClient({ adapter } as ConstructorParameters<typeof PrismaClient>[0]);
+const prismaExtendido = prisma as typeof prisma & {
+  configuracaoWhatsapp: {
+    findFirst: (args: {
+      where: { clinicaId?: string; ativo?: boolean };
+      orderBy: { criadoEm: 'desc' };
+      select: { idNumero: true };
+    }) => Promise<{ idNumero: string } | null>;
+  };
+};
 const redis = new Redis(env.URL_REDIS);
 const limiteDiario = 20;
 
@@ -94,11 +105,57 @@ async function baixarImagemBase64(url: string) {
   }
 }
 
-async function enviarTextoWhatsApp(telefone: string, texto: string) {
-  if (!env.WHATSAPP_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) {
+async function buscarUrlMediaWhatsApp(mediaId: string) {
+  if (!env.WHATSAPP_TOKEN) {
+    return null;
+  }
+  try {
+    const resposta = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}` },
+    });
+    if (!resposta.ok) {
+      throw new Error('Falha ao buscar mídia.');
+    }
+    const payload = (await resposta.json()) as { url?: string };
+    return payload.url ?? null;
+  } catch (erro) {
+    console.log('Erro ao buscar mídia WhatsApp.', erro);
+    return null;
+  }
+}
+
+async function baixarImagemWhatsAppBase64(mediaId: string) {
+  const url = await buscarUrlMediaWhatsApp(mediaId);
+  if (!url || !env.WHATSAPP_TOKEN) {
+    return '';
+  }
+  for (let tentativa = 1; tentativa <= 3; tentativa += 1) {
+    try {
+      const resposta = await fetch(url, {
+        headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}` },
+      });
+      if (!resposta.ok) {
+        throw new Error('Falha ao baixar imagem WhatsApp.');
+      }
+      const buffer = Buffer.from(await resposta.arrayBuffer());
+      return buffer.toString('base64');
+    } catch (erro) {
+      console.log('Erro ao baixar imagem WhatsApp.', { tentativa, erro });
+      if (tentativa === 3) {
+        return '';
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300 * tentativa));
+    }
+  }
+  return '';
+}
+
+async function enviarTextoWhatsApp(telefone: string, texto: string, phoneNumberId?: string) {
+  const numero = phoneNumberId ?? env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!env.WHATSAPP_TOKEN || !numero) {
     return false;
   }
-  const url = `https://graph.facebook.com/v20.0/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  const url = `https://graph.facebook.com/v20.0/${numero}/messages`;
   try {
     const resposta = await fetch(url, {
       method: 'POST',
@@ -131,12 +188,38 @@ async function enviarAlertaProfissional(texto: string) {
   return enviarTextoWhatsApp(env.WHATSAPP_ALERTA_NUMERO, texto);
 }
 
+async function buscarPhoneNumberIdClinica(clinicaId?: string) {
+  if (!clinicaId) {
+    return undefined;
+  }
+  try {
+    const config = await prismaExtendido.configuracaoWhatsapp.findFirst({
+      where: { clinicaId, ativo: true },
+      orderBy: { criadoEm: 'desc' },
+      select: { idNumero: true },
+    });
+    return config?.idNumero ?? undefined;
+  } catch (erro) {
+    console.log('Erro ao buscar configuração WhatsApp.', erro);
+    return undefined;
+  }
+}
+
 function formatarData(data: Date) {
   return new Date(data).toLocaleString('pt-BR');
 }
 
-function normalizarLista(alimentos?: string[]) {
-  return (alimentos ?? []).filter((item) => Boolean(item));
+function normalizarLista(alimentos?: Array<string | { nome?: string }>) {
+  return (alimentos ?? [])
+    .map((item) => {
+      if (typeof item === 'string') return item.trim();
+      if (item && typeof item === 'object' && 'nome' in item) {
+        const nome = String(item.nome ?? '').trim();
+        return nome;
+      }
+      return '';
+    })
+    .filter((item) => Boolean(item));
 }
 
 function dataChave() {
@@ -194,9 +277,11 @@ export {
   criarMensagemLimite,
   registrarAlertaCritico,
   baixarImagemBase64,
+  baixarImagemWhatsAppBase64,
+  buscarPhoneNumberIdClinica,
   enviarTextoWhatsApp,
   enviarAlertaProfissional,
-  normalizarLista,
   formatarData,
+  normalizarLista,
   encerrar,
 };
